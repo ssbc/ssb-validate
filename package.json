@@ -1,0 +1,22 @@
+{
+  "name": "ssb-validate",
+  "description": "",
+  "version": "0.0.0",
+  "homepage": "https://github.com/dominictarr/ssb-validate",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/dominictarr/ssb-validate.git"
+  },
+  "dependencies": {
+    "ssb-ref": "^2.6.2"
+  },
+  "devDependencies": {
+    "interleavings": "^0.3.1",
+    "ssb-client": "^4.4.0"
+  },
+  "scripts": {
+    "test": "set -e; for t in test/*.js; do node $t; done"
+  },
+  "author": "'Dominic Tarr' <dominic.tarr@gmail.com> (http://dominictarr.com)",
+  "license": "MIT"
+}
