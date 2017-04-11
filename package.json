@@ -8,18 +8,11 @@
     "url": "git://github.com/dominictarr/ssb-validate.git"
   },
   "dependencies": {
-    "monotonic-timestamp": "0.0.9",
     "ssb-ref": "^2.6.2"
   },
   "devDependencies": {
-    "flumelog-offset": "0.0.5",
-    "interleavings": "^0.3.1",
-    "level-codec": "^6.2.0",
-    "pull-file": "^1.0.0",
-    "pull-group": "^1.0.1",
-    "ssb-client": "^4.4.0",
     "ssb-keys": "^7.0.7",
-    "stream-to-pull-stream": "^1.7.2"
+    "tape": "^4.6.3"
   },
   "scripts": {
     "test": "set -e; for t in test/*.js; do node $t; done"
