@@ -10,7 +10,7 @@ exports.checkInvalid = function (state, msg) {
   if(state) {
     //the message is possibly a fork, but only if the signature is valid.
     if(msg.sequence != state.sequence + 1)
-      return new Error('invalid message: expected sequence ' + state.sequence + 1 + ' but got:'+ msg.sequence)
+      return new Error('invalid message: expected sequence ' + (state.sequence + 1) + ' but got:'+ msg.sequence + 'in state:'+JSON.stringify(state))
     if(msg.timestamp <= state.ts)
       return new Error('invalid message: timestamp not increasing')
     if(msg.previous != state.id)
@@ -74,5 +74,7 @@ exports.create = function (keys, hmac_key, state, content, timestamp) {
 exports.id = function (msg) {
   return '%'+ssbKeys.hash(JSON.stringify(msg, null, 2))
 }
+
+
 
 

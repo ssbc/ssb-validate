@@ -5,7 +5,7 @@ module.exports = function (getLatest, append) {
   var waiting = {}, cbs = [], state = {queue: [], feeds: {}, error: null}, writing = false
 
   function _append () {
-    if(writing) return
+    if(!state.queue.length ||writing) return
     writing = true
     var _cbs = cbs
     cbs = []
@@ -17,6 +17,9 @@ module.exports = function (getLatest, append) {
     append(queue, function (err) {
       writing = false
       while(_cbs.length) _cbs.shift()(err)
+
+      //write again if there is more to write
+      if(state.queue.length) _append()
     })
   }
 
@@ -24,8 +27,14 @@ module.exports = function (getLatest, append) {
     //check if we can validate immediately
     function _queue () {
       state = V.append(state, msg)
-      if(state.error) return cb(err)
-      else cb(null, msg)
+      if(state.error) {
+        return cb(state.error)
+      }
+      else {
+        cb(null, msg)
+      }
+      if(state.queue.length)
+        _append()
     }
 
     if(state.feeds[msg.author]) _queue()
@@ -35,6 +44,7 @@ module.exports = function (getLatest, append) {
       waiting[msg.author] = [_queue]
       getLatest(msg.author, function (err, value) {
         state.feeds[msg.author] = value
+        _queue()
         while(waiting[msg.author].length)
           waiting[msg.author].shift()()
       })
