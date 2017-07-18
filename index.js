@@ -95,9 +95,11 @@ exports.append = function (state, msg) {
 }
 
 exports.validate = function (state, feed) {
-  if(!state.feeds[feed] || !state.feeds[feed].queue.length)
+  if(!state.feeds[feed] || !state.feeds[feed].queue.length) {
     return state
-  
+  }
+  var msg = state.feeds[feed].queue.pop()
+  return exports.append(state, msg)
 }
 
 //pass in your own timestamp, so it's completely deterministic
@@ -117,5 +119,7 @@ exports.create = function (keys, hmac_key, state, content, timestamp) {
 exports.id = function (msg) {
   return '%'+ssbKeys.hash(JSON.stringify(msg, null, 2))
 }
+
+
 
 
