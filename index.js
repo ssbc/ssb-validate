@@ -1,7 +1,7 @@
 var ref = require('ssb-ref')
 var ssbKeys = require('ssb-keys')
 
-exports.checkInvalid = function (state, msg) {
+exports.checkInvalidCheap = function (state, msg) {
   //the message is just invalid
   if(!ref.isFeedId(msg.author))
     return new Error('invalid message: must have author')
@@ -25,6 +25,11 @@ exports.checkInvalid = function (state, msg) {
     if('number' !== typeof msg.timestamp)
       return new Error('initial message must have timestamp')
   }
+}
+
+exports.checkInvalid = function (state, msg) {
+  var err = exports.checkInvalidCheap(state, msg)
+  if(err) return err
   if(!ssbKeys.verifyObj({public: msg.author.substring(1)}, msg))
     return new Error('invalid signature')
   return false //not invalid
@@ -42,25 +47,48 @@ exports.checkInvalid = function (state, msg) {
 }
 */
 
-exports.append = function (state, msg) {
-  if(state.error = exports.checkInvalid(state.feeds[msg.author], msg)) {
-    return state
-  }
+exports.queue = function (state, msg) {
+  var err
+  if(err = exports.checkInvalidCheap(state.feeds[msg.author], msg))
+    return err
+  state.feeds[msg.author].queue.push(msg)
+  return state
+}
 
-  if(state.feeds[msg.author]) {
+function flatState (fstate) {
+  if(!fstate) return null
+  if(fstate.queue.length) {
+    var last = fstate.queue[fstate.queue.length - 1]
+    return {
+      id: exports.id(last),
+      timestamp: last.timestamp,
+      sequence: last.sequence
+    }
+  }
+  else
+    return fstate
+}
+
+exports.append = function (state, msg) {
+  if(state.error = exports.checkInvalid(state.feeds[msg.author], msg))
+    return state
+
+  else if(state.feeds[msg.author]) {
     var a = state.feeds[msg.author]
     a.id = exports.id(msg)
     a.sequence = msg.sequence
     a.timestamp = msg.timestamp
   }
   else
-    state.feeds[msg.author] = {id: exports.id(msg), sequence: msg.sequence, timestamp: msg.timestamp}
+    state.feeds[msg.author] = {id: exports.id(msg), sequence: msg.sequence, timestamp: msg.timestamp, queue: []}
+
   state.queue.push(msg)
   return state
 }
 
 //pass in your own timestamp, so it's completely deterministic
 exports.create = function (keys, hmac_key, state, content, timestamp) {
+  state = flatState(state)
   return ssbKeys.signObj(keys, hmac_key, {
     previous: state ? state.id : null,
     sequence: state ? state.sequence + 1 : 1,
@@ -74,6 +102,8 @@ exports.create = function (keys, hmac_key, state, content, timestamp) {
 exports.id = function (msg) {
   return '%'+ssbKeys.hash(JSON.stringify(msg, null, 2))
 }
+
+
 
 
 
