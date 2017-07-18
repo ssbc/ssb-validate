@@ -70,6 +70,8 @@ function flatState (fstate) {
 }
 
 exports.append = function (state, msg) {
+  state = exports.queue(state, msg)
+  state.feeds[msg.author].queue.pop()
   if(state.error = exports.checkInvalid(flatState(state.feeds[msg.author]), msg))
     return state
 
@@ -87,6 +89,12 @@ exports.append = function (state, msg) {
 
   state.queue.push(msg)
   return state
+}
+
+exports.validate = function (state, feed) {
+  if(!state.feeds[feed] || !state.feeds[feed].queue.length)
+    return state
+  
 }
 
 //pass in your own timestamp, so it's completely deterministic
