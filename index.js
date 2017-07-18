@@ -49,8 +49,11 @@ exports.checkInvalid = function (state, msg) {
 
 exports.queue = function (state, msg) {
   var err
-  if(err = exports.checkInvalidCheap(state.feeds[msg.author], msg))
-    return err
+  if(state.error = exports.checkInvalidCheap(flatState(state.feeds[msg.author]), msg))
+    return state
+  state.feeds[msg.author] = state.feeds[msg.author] || {
+    id: null, sequence: null, timestamp: null, queue: []
+  }
   state.feeds[msg.author].queue.push(msg)
   return state
 }
@@ -70,8 +73,8 @@ function flatState (fstate) {
 }
 
 exports.append = function (state, msg) {
-  state = exports.queue(state, msg)
-  state.feeds[msg.author].queue.pop()
+  //state = exports.queue(state, msg)
+//  state.feeds[msg.author].queue.pop()
   if(state.error = exports.checkInvalid(flatState(state.feeds[msg.author]), msg))
     return state
 
@@ -100,6 +103,7 @@ exports.validate = function (state, feed) {
 //pass in your own timestamp, so it's completely deterministic
 exports.create = function (keys, hmac_key, state, content, timestamp) {
   state = flatState(state)
+  console.log('EXPECTED STATE', state)
   return ssbKeys.signObj(keys, hmac_key, {
     previous: state ? state.id : null,
     sequence: state ? state.sequence + 1 : 1,
@@ -113,11 +117,5 @@ exports.create = function (keys, hmac_key, state, content, timestamp) {
 exports.id = function (msg) {
   return '%'+ssbKeys.hash(JSON.stringify(msg, null, 2))
 }
-
-
-
-
-
-
 
 
