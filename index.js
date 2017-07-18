@@ -70,7 +70,7 @@ function flatState (fstate) {
 }
 
 exports.append = function (state, msg) {
-  if(state.error = exports.checkInvalid(state.feeds[msg.author], msg))
+  if(state.error = exports.checkInvalid(flatState(state.feeds[msg.author]), msg))
     return state
 
   else if(state.feeds[msg.author]) {
@@ -78,6 +78,9 @@ exports.append = function (state, msg) {
     a.id = exports.id(msg)
     a.sequence = msg.sequence
     a.timestamp = msg.timestamp
+    var q = state.feeds[msg.author].queue
+    while(q.length)
+      state.queue.push(q.shift())
   }
   else
     state.feeds[msg.author] = {id: exports.id(msg), sequence: msg.sequence, timestamp: msg.timestamp, queue: []}
@@ -102,6 +105,8 @@ exports.create = function (keys, hmac_key, state, content, timestamp) {
 exports.id = function (msg) {
   return '%'+ssbKeys.hash(JSON.stringify(msg, null, 2))
 }
+
+
 
 
 

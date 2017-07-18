@@ -54,7 +54,9 @@ tape('simple', function (t) {
   var msg3 = v.create(keys, null, fstate, {type: 'test2'}, +new Date('2017-04-11 8:10 UTC'))
   t.equal(msg3.previous, v.id(msg2))
 
+  state = v.append(state, msg3)
 
+  t.deepEqual(state.queue, [msg, msg2, msg3])
   console.log(state)
   t.end()
 
