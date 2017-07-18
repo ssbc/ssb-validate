@@ -2,7 +2,9 @@ var tape = require('tape')
 var ssbKeys = require('ssb-keys')
 
 var seed = require('crypto').createHash('sha256').update('validation-test-seed').digest()
+var seed2 = require('crypto').createHash('sha256').update('validation-test-seed2').digest()
 var keys = ssbKeys.generate('ed25519', seed)
+var keys2 = ssbKeys.generate('ed25519', seed2)
 
 var state = {
   queue: [],
@@ -59,6 +61,24 @@ tape('simple', function (t) {
   t.deepEqual(state.queue, [msg, msg2, msg3])
   console.log(state)
   t.end()
+})
 
+
+tape('queue the first item', function (t) {
+  var msg = v.create(keys2, null, null, {type: 'test'}, +new Date('2017-04-11 9:09 UTC'))
+  state = v.queue(state, msg)
+  var fstate = state.feeds[keys2.id]
+  t.equal(fstate.id, null)
+  t.equal(fstate.timestamp, null)
+  t.equal(fstate.sequence, null)
+  t.deepEqual(fstate.queue, [msg])
+
+  var msg2 = v.create(keys2, null, fstate, {type: 'test'}, +new Date('2017-04-11 9:10 UTC'))
+  state = v.queue(state, msg2)
+  t.notOk(state.error)
+
+  state = v.validate(state, keys2.id)
+
+  t.end()
 })
 
