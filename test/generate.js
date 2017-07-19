@@ -6,12 +6,9 @@ var seed2 = require('crypto').createHash('sha256').update('validation-test-seed2
 var keys = ssbKeys.generate('ed25519', seed)
 var keys2 = ssbKeys.generate('ed25519', seed2)
 
-var state = {
-  queue: [],
-  feeds: {}
-}
-
 var v = require('../')
+
+var state = v.initial()
 
 tape('simple', function (t) {
 
@@ -81,4 +78,8 @@ tape('queue the first item', function (t) {
 
   t.end()
 })
+
+
+
+
 
