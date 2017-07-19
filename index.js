@@ -1,6 +1,14 @@
 var ref = require('ssb-ref')
 var ssbKeys = require('ssb-keys')
 
+exports.initial = function () {
+  return {
+    queue: [],
+    feeds: {},
+    error: null
+  }
+}
+
 exports.checkInvalidCheap = function (state, msg) {
   //the message is just invalid
   if(!ref.isFeedId(msg.author))
@@ -73,8 +81,6 @@ function flatState (fstate) {
 }
 
 exports.append = function (state, msg) {
-  //state = exports.queue(state, msg)
-//  state.feeds[msg.author].queue.pop()
   if(state.error = exports.checkInvalid(flatState(state.feeds[msg.author]), msg))
     return state
 
@@ -105,7 +111,6 @@ exports.validate = function (state, feed) {
 //pass in your own timestamp, so it's completely deterministic
 exports.create = function (keys, hmac_key, state, content, timestamp) {
   state = flatState(state)
-  console.log('EXPECTED STATE', state)
   return ssbKeys.signObj(keys, hmac_key, {
     previous: state ? state.id : null,
     sequence: state ? state.sequence + 1 : 1,
@@ -120,6 +125,11 @@ exports.id = function (msg) {
   return '%'+ssbKeys.hash(JSON.stringify(msg, null, 2))
 }
 
+exports.appendNew = function (state, hmac_key, keys, content, timestamp) {
+  var msg = exports.create(keys, hmac_key, state.feeds[keys.id], content, timestamp)
+  state = exports.append(state, msg)
+  return state
+}
 
 
 
