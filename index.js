@@ -3,6 +3,8 @@ var ssbKeys = require('ssb-keys')
 
 exports.initial = function () {
   return {
+    validated: 0,
+    queued: 0,
     queue: [],
     feeds: {},
     error: null
@@ -62,6 +64,7 @@ exports.queue = function (state, msg) {
   state.feeds[msg.author] = state.feeds[msg.author] || {
     id: null, sequence: null, timestamp: null, queue: []
   }
+  state.queued += 1
   state.feeds[msg.author].queue.push(msg)
   return state
 }
@@ -90,13 +93,16 @@ exports.append = function (state, msg) {
     a.sequence = msg.sequence
     a.timestamp = msg.timestamp
     var q = state.feeds[msg.author].queue
+    state.validated += q.length
+    state.queued -= q.length
     while(q.length)
       state.queue.push(q.shift())
   }
-  else
+  else {
     state.feeds[msg.author] = {id: exports.id(msg), sequence: msg.sequence, timestamp: msg.timestamp, queue: []}
-
+  }
   state.queue.push(msg)
+  state.validated += 1
   return state
 }
 
@@ -105,6 +111,7 @@ exports.validate = function (state, feed) {
     return state
   }
   var msg = state.feeds[feed].queue.pop()
+  state.queued -= 1
   return exports.append(state, msg)
 }
 
