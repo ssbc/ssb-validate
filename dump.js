@@ -8,7 +8,6 @@ var logfile = '/tmp/ssb-validate_dump-test'
 try { require('fs').unlinkSync(logfile) } catch (_) {}
 
 var log = Log(logfile, 1024, require('flumecodec/json'))
-console.log(log)
 
 var async = require('./async')(state, log)
 
@@ -46,6 +45,10 @@ require('ssb-client')(function (err, sbot) {
           if(err) {
             ConsoleLog()
             return async.flush(true, function (_) {
+              q = async.queued()
+              v = async.validated()
+              c = q + v
+              ConsoleLog()
               cb(err)
             })
           }
@@ -53,6 +56,7 @@ require('ssb-client')(function (err, sbot) {
           async.queue(data.value)
           if(state.queue.length > 100) {
             async.flush(null, function (err, data) {
+              maybeLog()
               cb(err, data)
             })
           }
@@ -62,31 +66,10 @@ require('ssb-client')(function (err, sbot) {
       }
   },
   pull.drain(null, function () {
-      var l
-      ConsoleLog()
-      for(var k in state.feeds) {
-        if(l = state.feeds[k].queue.length) {
-          validate.validate(state, k)
-          q -= l
-          v += l
-          maybeLog()
-        }
-      }
-      console.log('validate', k, q, v)
-      ConsoleLog()
       sbot.close()
     })
   )
-
 })
-
-
-
-
-
-
-
-
 
 
 
