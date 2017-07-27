@@ -35,6 +35,9 @@ tape('simple', function (t) {
   t.equal(state.feeds[keys.id].id, v.id(msg))
   t.equal(state.queue.length, 1)
 
+  t.equal(state.validated, 1)
+  t.equal(state.queued, 0)
+
   //queue appends to a feed, but does not write check the signature
   //(because that is quite slow on javascript crypto)
 
@@ -63,6 +66,9 @@ tape('simple', function (t) {
 
 tape('queue the first item', function (t) {
   var msg = v.create(keys2, null, null, {type: 'test'}, +new Date('2017-04-11 9:09 UTC'))
+  t.equal(state.queued, 0)
+  t.equal(state.validated, 3)
+
   state = v.queue(state, msg)
   var fstate = state.feeds[keys2.id]
   t.equal(fstate.id, null)
@@ -70,16 +76,20 @@ tape('queue the first item', function (t) {
   t.equal(fstate.sequence, null)
   t.deepEqual(fstate.queue, [msg])
 
+  t.equal(state.queued, 1)
+
   var msg2 = v.create(keys2, null, fstate, {type: 'test'}, +new Date('2017-04-11 9:10 UTC'))
   state = v.queue(state, msg2)
+  t.equal(state.queued, 2)
   t.notOk(state.error)
 
+  t.equal(state.validated, 3)
   state = v.validate(state, keys2.id)
+
+  t.equal(state.validated, 5)
+  t.equal(state.queued, 0)
 
   t.end()
 })
-
-
-
 
 
