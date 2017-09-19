@@ -7,8 +7,24 @@ exports.initial = function () {
     queued: 0,
     queue: [],
     feeds: {},
-    error: null
+    error: null,
+    waiting: []
   }
+}
+
+var isInvalidContent = exports.isInvalidContent = function (content) {
+  if(!isEncrypted(content)) {
+
+    var type = content.type
+
+    if (!(isString(type) && type.length <= 52 && type.length >= 3)) {
+      return new Error('type must be a string' +
+        '3 <= type.length < 52, was:' + type
+      )
+    }
+  }
+  return false
+
 }
 
 exports.checkInvalidCheap = function (state, msg) {
@@ -98,8 +114,12 @@ exports.append = function (state, msg) {
     while(q.length)
       state.queue.push(q.shift())
   }
-  else {
+  else if(msg.sequence === 1) {
     state.feeds[msg.author] = {id: exports.id(msg), sequence: msg.sequence, timestamp: msg.timestamp, queue: []}
+  }
+  else {
+    //waiting for initial state to be loaded
+    state.waiting.push(msg)
   }
   state.queue.push(msg)
   state.validated += 1
@@ -116,7 +136,7 @@ exports.validate = function (state, feed) {
 }
 
 //pass in your own timestamp, so it's completely deterministic
-exports.create = function (keys, hmac_key, state, content, timestamp) {
+exports.create = function (state, keys, hmac_key, content, timestamp) {
   state = flatState(state)
   return ssbKeys.signObj(keys, hmac_key, {
     previous: state ? state.id : null,
@@ -137,6 +157,23 @@ exports.appendNew = function (state, hmac_key, keys, content, timestamp) {
   state = exports.append(state, msg)
   return state
 }
+
+/*
+//thought maybe this is needed for tests?
+exports.setup = function (state, feeds) {
+  for(var k in feeds)
+    state.feeds[k] = feeds[k]
+  var w = {}
+  while(state.waiting) {
+    var msg = state.waiting.shift()
+    w[msg.author] = true
+    state = exports.queue(state, msg)
+  }
+  for(var k in w)
+    state = exports.validate(state, k)
+  return state
+}
+*/
 
 
 
