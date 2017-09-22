@@ -100,8 +100,10 @@ function flatState (fstate) {
 }
 
 exports.append = function (state, msg) {
-  if(state.error = exports.checkInvalid(flatState(state.feeds[msg.author]), msg))
-    return state
+  var err
+  var _state = flatState(state.feeds[msg.author])
+  if(err = exports.checkInvalid(_state, msg))
+    throw err
 
   else if(state.feeds[msg.author]) {
     var a = state.feeds[msg.author]
@@ -153,7 +155,7 @@ exports.id = function (msg) {
 }
 
 exports.appendNew = function (state, hmac_key, keys, content, timestamp) {
-  var msg = exports.create(keys, hmac_key, state.feeds[keys.id], content, timestamp)
+  var msg = exports.create(state.feeds[keys.id], keys, hmac_key, content, timestamp)
   state = exports.append(state, msg)
   return state
 }
@@ -174,6 +176,9 @@ exports.setup = function (state, feeds) {
   return state
 }
 */
+
+
+
 
 
 
