@@ -23,7 +23,7 @@ require('ssb-client')(function (err, sbot) {
       }
       state.queue.shift()
       var s = ((Date.now() - start)/1000)
-      if(!(c++%100)) {
+      if(!(c++%1000)) {
         console.log(s, e, c, c / s)
       }
       return true
