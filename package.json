@@ -8,8 +8,6 @@
     "url": "git://github.com/dominictarr/ssb-validate.git"
   },
   "dependencies": {
-    "async-write": "^1.0.0",
-    "obv": "0.0.1",
     "ssb-ref": "^2.6.2"
   },
   "devDependencies": {
@@ -27,3 +25,4 @@
   "author": "'Dominic Tarr' <dominic.tarr@gmail.com> (http://dominictarr.com)",
   "license": "MIT"
 }
+
