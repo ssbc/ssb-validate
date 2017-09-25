@@ -1,5 +1,11 @@
 var ref = require('ssb-ref')
 var ssbKeys = require('ssb-keys')
+var isHash = ref.isHash
+var isFeedId = ref.isFeedId
+
+var encode = exports.encode = function (obj) {
+  return JSON.stringify(obj, null, 2)
+}
 
 exports.initial = function () {
   return {
@@ -12,11 +18,26 @@ exports.initial = function () {
   }
 }
 
+
+function isString (s) {
+  return 'string' === typeof s
+}
+
+function isInteger (n) {
+  return ~~n === n
+}
+
+function isObject (o) {
+  return o && 'object' === typeof o
+}
+
+function isEncrypted (str) {
+  return isString(str) && /^[0-9A-Za-z\/+]+={0,2}\.box/.test(str)
+}
+
 var isInvalidContent = exports.isInvalidContent = function (content) {
   if(!isEncrypted(content)) {
-
     var type = content.type
-
     if (!(isString(type) && type.length <= 52 && type.length >= 3)) {
       return new Error('type must be a string' +
         '3 <= type.length < 52, was:' + type
@@ -24,7 +45,29 @@ var isInvalidContent = exports.isInvalidContent = function (content) {
     }
   }
   return false
+}
 
+var isInvalidShape = exports.isInvalidShape = function (msg) {
+  if(
+    !isObject(msg) ||
+    !isInteger(msg.sequence) ||
+    !isFeedId(msg.author) ||
+    !(isObject(msg.content) || isEncrypted(msg.content))
+  )
+    return new Error('message has invalid properties:'+JSON.stringify(msg, null, 2))
+
+  //allow encrypted messages, where content is a base64 string.
+
+  //NOTE: since this checks the length of javascript string,
+  //it's not actually the byte length! it's the number of utf8 chars
+  //for latin1 it's gonna be 8k, but if you use all utf8 you can
+  //approach 32k. This is a weird legacy thing, obviously, that
+  //we will fix at some point...
+  var asJson = encode(msg)
+  if (asJson.length > 8192) // 8kb
+    return new Error( 'encoded message must not be larger than 8192 bytes')
+
+  return isInvalidContent(msg.content)
 }
 
 exports.checkInvalidCheap = function (state, msg) {
@@ -51,6 +94,7 @@ exports.checkInvalidCheap = function (state, msg) {
     if('number' !== typeof msg.timestamp)
       return new Error('initial message must have timestamp')
   }
+  return isInvalidShape(msg)
 }
 
 exports.checkInvalid = function (state, msg) {
@@ -176,6 +220,12 @@ exports.setup = function (state, feeds) {
   return state
 }
 */
+
+
+
+
+
+
 
 
 
