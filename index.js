@@ -97,10 +97,10 @@ exports.checkInvalidCheap = function (state, msg) {
   return isInvalidShape(msg)
 }
 
-exports.checkInvalid = function (state, msg) {
+exports.checkInvalid = function (state, hmac_key, msg) {
   var err = exports.checkInvalidCheap(state, msg)
   if(err) return err
-  if(!ssbKeys.verifyObj({public: msg.author.substring(1)}, msg))
+  if(!ssbKeys.verifyObj({public: msg.author.substring(1)}, hmac_key, msg))
     return new Error('invalid signature')
   return false //not invalid
 }
@@ -143,10 +143,10 @@ function flatState (fstate) {
     return fstate
 }
 
-exports.append = function (state, msg) {
+exports.append = function (state, hmac_key, msg) {
   var err
   var _state = flatState(state.feeds[msg.author])
-  if(err = exports.checkInvalid(_state, msg))
+  if(err = exports.checkInvalid(_state, hmac_key, msg))
     throw err
 
   else if(state.feeds[msg.author]) {
@@ -172,13 +172,13 @@ exports.append = function (state, msg) {
   return state
 }
 
-exports.validate = function (state, feed) {
+exports.validate = function (state, hmac_key, feed) {
   if(!state.feeds[feed] || !state.feeds[feed].queue.length) {
     return state
   }
   var msg = state.feeds[feed].queue.pop()
   state.queued -= 1
-  return exports.append(state, msg)
+  return exports.append(state, hmac_key, msg)
 }
 
 //pass in your own timestamp, so it's completely deterministic
@@ -203,32 +203,5 @@ exports.appendNew = function (state, hmac_key, keys, content, timestamp) {
   state = exports.append(state, msg)
   return state
 }
-
-/*
-//thought maybe this is needed for tests?
-exports.setup = function (state, feeds) {
-  for(var k in feeds)
-    state.feeds[k] = feeds[k]
-  var w = {}
-  while(state.waiting) {
-    var msg = state.waiting.shift()
-    w[msg.author] = true
-    state = exports.queue(state, msg)
-  }
-  for(var k in w)
-    state = exports.validate(state, k)
-  return state
-}
-*/
-
-
-
-
-
-
-
-
-
-
 
 
