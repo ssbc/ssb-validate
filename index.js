@@ -70,6 +70,11 @@ var isInvalidShape = exports.isInvalidShape = function (msg) {
   return isInvalidContent(msg.content)
 }
 
+function fatal(err) {
+  err.fatal = true
+  return err
+}
+
 exports.checkInvalidCheap = function (state, msg) {
   //the message is just invalid
   if(!ref.isFeedId(msg.author))
@@ -77,22 +82,27 @@ exports.checkInvalidCheap = function (state, msg) {
 
   //state is id, sequence, timestamp
   if(state) {
-    //the message is possibly a fork, but only if the signature is valid.
+    //most likely, we just tried to append two messages twice
+    //or append another message after an error.
     if(msg.sequence != state.sequence + 1)
       return new Error('invalid message: expected sequence ' + (state.sequence + 1) + ' but got:'+ msg.sequence + 'in state:'+JSON.stringify(state))
-    if(msg.timestamp <= state.ts)
-      return new Error('invalid message: timestamp not increasing')
+    //if the timestamp doesn't increase, they should have noticed at their end.
+    if(isNaN(state.timestamp)) throw new Error('state must have timestamp property')
+    if(msg.timestamp <= state.timestamp)
+      return fatal(new Error('invalid message: timestamp not increasing'))
+    //if we have the correct sequence and wrong previous,
+    //this must be a fork!
     if(msg.previous != state.id)
-      return new Error('invalid message: expected different previous message')
+      return fatal(new Error('invalid message: expected different previous message'))
     //and check type, and length, and some other stuff. finaly check the signature.
   }
   else {
     if(msg.previous !== null)
-      return new Error('initial message must have previous: null')
+      return fatal(new Error('initial message must have previous: null'))
     if(msg.sequence !== 1)
-      return new Error('initial message must have sequence: 1')
+      return fatal(new Error('initial message must have sequence: 1'))
     if('number' !== typeof msg.timestamp)
-      return new Error('initial message must have timestamp')
+      return fatal(new Error('initial message must have timestamp'))
   }
   return isInvalidShape(msg)
 }
@@ -101,7 +111,7 @@ exports.checkInvalid = function (state, hmac_key, msg) {
   var err = exports.checkInvalidCheap(state, msg)
   if(err) return err
   if(!ssbKeys.verifyObj({public: msg.author.substring(1)}, hmac_key, msg))
-    return new Error('invalid signature')
+    return fatal(new Error('invalid signature'))
   return false //not invalid
 }
 
@@ -183,7 +193,9 @@ exports.validate = function (state, hmac_key, feed) {
 
 //pass in your own timestamp, so it's completely deterministic
 exports.create = function (state, keys, hmac_key, content, timestamp) {
+  if(timestamp == null) throw new Error('timestamp must be provided')
   state = flatState(state)
+  if(state && timestamp <= state.timestamp) throw new Error('timestamp must be increasing')
   return ssbKeys.signObj(keys, hmac_key, {
     previous: state ? state.id : null,
     sequence: state ? state.sequence + 1 : 1,
@@ -203,5 +215,8 @@ exports.appendNew = function (state, hmac_key, keys, content, timestamp) {
   state = exports.append(state, msg)
   return state
 }
+
+
+
 
 
