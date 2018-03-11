@@ -85,24 +85,24 @@ exports.checkInvalidCheap = function (state, msg) {
     //most likely, we just tried to append two messages twice
     //or append another message after an error.
     if(msg.sequence != state.sequence + 1)
-      return new Error('invalid message: expected sequence ' + (state.sequence + 1) + ' but got:'+ msg.sequence + 'in state:'+JSON.stringify(state))
+      return new Error('invalid message: expected sequence ' + (state.sequence + 1) + ' but got:'+ msg.sequence + 'in state:'+JSON.stringify(state)+', on feed:'+msg.author)
     //if the timestamp doesn't increase, they should have noticed at their end.
-    if(isNaN(state.timestamp)) throw new Error('state must have timestamp property')
+    if(isNaN(state.timestamp)) throw new Error('state must have timestamp property, on feed:'+msg.author)
     if(msg.timestamp <= state.timestamp)
-      return fatal(new Error('invalid message: timestamp not increasing'))
+      return fatal(new Error('invalid message: timestamp not increasing, on feed:'+msg.author))
     //if we have the correct sequence and wrong previous,
     //this must be a fork!
     if(msg.previous != state.id)
-      return fatal(new Error('invalid message: expected different previous message'))
+      return fatal(new Error('invalid message: expected different previous message, on feed:'+msg.author))
     //and check type, and length, and some other stuff. finaly check the signature.
   }
   else {
     if(msg.previous !== null)
-      return fatal(new Error('initial message must have previous: null'))
+      return fatal(new Error('initial message must have previous: null, on feed:'+msg.author))
     if(msg.sequence !== 1)
-      return fatal(new Error('initial message must have sequence: 1'))
+      return fatal(new Error('initial message must have sequence: 1, on feed:'+msg.author))
     if('number' !== typeof msg.timestamp)
-      return fatal(new Error('initial message must have timestamp'))
+      return fatal(new Error('initial message must have timestamp, on feed:'+msg.author))
   }
   return isInvalidShape(msg)
 }
