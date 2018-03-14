@@ -89,7 +89,13 @@ function test (hmac_key) {
       var m = v.create(null, keys, hmac_key, {type: 'invalid'}, new Date('foo'))
     })
     t.end()
+  })
 
+  tape('create with invalid date', function (t) {
+    t.throws(function () {
+      var m = v.create(null, keys, hmac_key, null, Date.now())
+    })
+    t.end()
   })
 
 }
