@@ -193,14 +193,14 @@ exports.validate = function (state, hmac_key, feed) {
 
 //pass in your own timestamp, so it's completely deterministic
 exports.create = function (state, keys, hmac_key, content, timestamp) {
-  if(timestamp == null) throw new Error('timestamp must be provided')
+  if(timestamp == null || isNaN(+timestamp)) throw new Error('timestamp must be provided')
   state = flatState(state)
-  if(state && timestamp <= state.timestamp) throw new Error('timestamp must be increasing')
+  if(state && +timestamp <= state.timestamp) throw new Error('timestamp must be increasing')
   return ssbKeys.signObj(keys, hmac_key, {
     previous: state ? state.id : null,
     sequence: state ? state.sequence + 1 : 1,
     author: keys.id,
-    timestamp: timestamp,
+    timestamp: +timestamp,
     hash: 'sha256',
     content: content,
   })
@@ -215,6 +215,8 @@ exports.appendNew = function (state, hmac_key, keys, content, timestamp) {
   state = exports.append(state, msg)
   return state
 }
+
+
 
 
 
