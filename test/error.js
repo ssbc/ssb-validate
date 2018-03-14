@@ -84,11 +84,20 @@ function test (hmac_key) {
 
   })
 
+  tape('create with invalid date', function (t) {
+    t.throws(function () {
+      var m = v.create(null, keys, hmac_key, {type: 'invalid'}, new Date('foo'))
+    })
+    t.end()
+
+  })
+
 }
 
 test()
 test(hash('hmac_key'))
 test(hash('hmac_key2'))
+
 
 
 
