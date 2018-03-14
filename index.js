@@ -195,6 +195,9 @@ exports.validate = function (state, hmac_key, feed) {
 exports.create = function (state, keys, hmac_key, content, timestamp) {
   if(timestamp == null || isNaN(+timestamp)) throw new Error('timestamp must be provided')
   state = flatState(state)
+  if(!content || !isObject(content) || isString(content))
+    throw new Error('invalid message content, must be object or encrypted string')
+
   if(state && +timestamp <= state.timestamp) throw new Error('timestamp must be increasing')
   return ssbKeys.signObj(keys, hmac_key, {
     previous: state ? state.id : null,
@@ -215,10 +218,4 @@ exports.appendNew = function (state, hmac_key, keys, content, timestamp) {
   state = exports.append(state, msg)
   return state
 }
-
-
-
-
-
-
 
