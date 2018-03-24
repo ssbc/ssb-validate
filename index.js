@@ -20,7 +20,7 @@ exports.initial = function () {
 
 
 function isString (s) {
-  return 'string' === typeof s
+  return s && 'string' === typeof s
 }
 
 function isInteger (n) {
@@ -195,7 +195,7 @@ exports.validate = function (state, hmac_key, feed) {
 exports.create = function (state, keys, hmac_key, content, timestamp) {
   if(timestamp == null || isNaN(+timestamp)) throw new Error('timestamp must be provided')
   state = flatState(state)
-  if(!content || !isObject(content) || isString(content))
+  if(!isObject(content) && !isString(content))
     throw new Error('invalid message content, must be object or encrypted string')
 
   if(state && +timestamp <= state.timestamp) throw new Error('timestamp must be increasing')
