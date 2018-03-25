@@ -32,6 +32,8 @@ function isObject (o) {
 }
 
 function isEncrypted (str) {
+  //NOTE: does not match end of string,
+  //so future box version are accepted.
   return isString(str) && /^[0-9A-Za-z\/+]+={0,2}\.box/.test(str)
 }
 
@@ -195,18 +197,23 @@ exports.validate = function (state, hmac_key, feed) {
 exports.create = function (state, keys, hmac_key, content, timestamp) {
   if(timestamp == null || isNaN(+timestamp)) throw new Error('timestamp must be provided')
   state = flatState(state)
-  if(!isObject(content) && !isString(content))
+  if(!isObject(content) && !isEncrypted(content))
     throw new Error('invalid message content, must be object or encrypted string')
 
+
   if(state && +timestamp <= state.timestamp) throw new Error('timestamp must be increasing')
-  return ssbKeys.signObj(keys, hmac_key, {
+  var msg = {
     previous: state ? state.id : null,
     sequence: state ? state.sequence + 1 : 1,
     author: keys.id,
     timestamp: +timestamp,
     hash: 'sha256',
     content: content,
-  })
+  }
+
+  var err = isInvalidShape(msg)
+  if(err) throw err
+  return ssbKeys.signObj(keys, hmac_key, msg)
 }
 
 exports.id = function (msg) {
@@ -218,4 +225,7 @@ exports.appendNew = function (state, hmac_key, keys, content, timestamp) {
   state = exports.append(state, msg)
   return state
 }
+
+
+
 
