@@ -1,6 +1,8 @@
 var tape = require('tape')
 var ssbKeys = require('ssb-keys')
 var crypto = require('crypto')
+var path = require('path')
+var fs = require('fs')
 
 function hash (seed) {
   return crypto.createHash('sha256').update(seed).digest()
@@ -10,11 +12,20 @@ var keys = ssbKeys.generate('ed25519', hash('validation-test-seed1'))
 var keys2 = ssbKeys.generate('ed25519', hash('validation-test-seed2'))
 
 
+//generate randomish but deterministic test data.
+//this is not intended for security use.
+//use a proper key stream (etc) instead.
+function pseudorandom (seed, length) {
+  var a = []
+  for(var l = 0; l < length; l += 32)
+    a.push(hash(''+seed+l))
+  return Buffer.concat(a).slice(0, length)
+}
+
 var v = require('..')
 
 function test (hmac_key) { 
   var state = v.initial()
-
   tape('simple', function (t) {
 
     for(var i = 0; i < 10; i++) {
@@ -99,74 +110,100 @@ function test (hmac_key) {
     t.end()
   })
 
-  var ctxt = crypto.randomBytes(1024).toString('base64')+'.box'
+  var ctxt =
+        pseudorandom('test', 1024).toString('base64')+'.box'
+
+  //create a purposefully invalid message (for testing)
+  function create_invalid (state, keys, hmac_key, content, timestamp) {
+    invalid.push(ssbKeys.signObj(keys, hmac_key, {
+      previous: state ? state.id : null,
+      sequence: state ? state.sequence + 1 : 1,
+      author: keys.id,
+      timestamp: +timestamp,
+      hash: 'sha256',
+      content: content,
+    }))
+    return v.create(state, keys, hmac_key, null, timestamp)
+  }
+
+  var invalid = []
 
   tape('create with invalid content', function (t) {
+    var date = +new Date('2017-04-11 9:09 UTC')
     t.throws(function () {
-      var m = v.create(null, keys, hmac_key, null, Date.now())
+      var m = create_invalid(null, keys, hmac_key, null, date)
     })
     t.throws(function () {
-      var m = v.create(null, keys, hmac_key, true, Date.now())
+      var m = create_invalid(null, keys, hmac_key, date)
     })
     t.throws(function () {
-      var m = v.create(null, keys, hmac_key, false, Date.now())
+      var m = create_invalid(null, keys, hmac_key, false, date)
     })
     t.throws(function () {
-      var m = v.create(null, keys, hmac_key, 0, Date.now())
+      var m = create_invalid(null, keys, hmac_key, 0, date)
     })
     t.throws(function () {
-      var m = v.create(null, keys, hmac_key, 100, Date.now())
+      var m = create_invalid(null, keys, hmac_key, 100, date)
     })
     t.throws(function () {
-      var m = v.create(null, keys, hmac_key, [], Date.now())
+      var m = create_invalid(null, keys, hmac_key, [], date)
     }, 'array as content')
     t.throws(function () {
-      var m = v.create(null, keys, hmac_key, new Buffer('hello'), Date.now())
+      var m = create_invalid(null, keys, hmac_key, new Buffer('hello'), date)
     }, 'buffer as content')
     t.throws(function () {
-      var m = v.create(null, keys, hmac_key, new Date(), Date.now())
+      var m = create_invalid(null, keys, hmac_key, new Date(date), date)
     }, 'date as content')
 
     t.throws(function () {
-      var m = v.create(null, keys, hmac_key, {}, Date.now())
+      var m = create_invalid(null, keys, hmac_key, {}, date)
     })
     t.throws(function () {
-      var m = v.create(null, keys, hmac_key, {tyfe:'not-okay' }, Date.now())
+      var m = create_invalid(null, keys, hmac_key, {tyfe:'not-okay' }, date)
     })
 
     t.throws(function () {
-      var m = v.create(null, keys, hmac_key, {tyfe:'not-okay' }, Date.now())
+      var m = create_invalid(null, keys, hmac_key, {tyfe:'not-okay' }, date)
+    })
+
+    t.throws(function () {
+      var m = create_invalid(null, keys, hmac_key, {
+        type: //too long!
+          pseudorandom('test', 100).toString('base64')
+      }, date)
     })
 
     //type too long
     t.throws(function () {
-      var m = v.create(null, keys, hmac_key, {type:ctxt }, Date.now())
-    })
-
-    //type too long
-    t.throws(function () {
-      var m = v.create(null, keys, hmac_key, {type:keys.id }, Date.now())
+      var m = create_invalid(null, keys, hmac_key, {type:keys.id }, date)
     })
     // type too short
     t.throws(function () {
-      var m = v.create(null, keys, hmac_key, {type:'T' }, Date.now())
+      var m = create_invalid(null, keys, hmac_key, {type:'T' }, date)
     })
     // type too short
     t.throws(function () {
-      var m = v.create(null, keys, hmac_key, {type:'TT' }, Date.now())
+      var m = create_invalid(null, keys, hmac_key, {type:'TT' }, date)
     })
     // content too long
     t.throws(function () {
-      var m = v.create(null, keys, hmac_key, crypto.randomBytes(8*1024).toString('base64')+'.box', Date.now())
+      var m = create_invalid(
+        null, keys, hmac_key,
+        pseudorandom('test', 8*1024).toString('base64')+'.box',
+        date
+      )
     }, 'content too long')
+
+    if(!hmac_key)
+      fs.writeFileSync(path.join(__dirname, 'data', 'invalid_messages.json'), JSON.stringify(invalid, null, 2))
     t.end()
   })
-   
+
   tape('valid messages', function (t) {
     var msg
 
     //type must be 3 chars
-    var msg = v.create(null, keys, hmac_key, {type:'TTT' }, Date.now())
+    var msg = v.create(null, keys, hmac_key, {type:'TTT' }, +new Date('2017-04-11 9:09 UTC'))
     t.deepEqual(msg.content, {type: 'TTT'})
 
     //type can be msg id
@@ -213,9 +250,5 @@ function test (hmac_key) {
 test()
 test(hash('hmac_key'))
 test(hash('hmac_key2'))
-
-
-
-
 
 
