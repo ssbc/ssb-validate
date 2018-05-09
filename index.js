@@ -88,10 +88,10 @@ exports.checkInvalidCheap = function (state, msg) {
     //or append another message after an error.
     if(msg.sequence != state.sequence + 1)
       return new Error('invalid message: expected sequence ' + (state.sequence + 1) + ' but got:'+ msg.sequence + 'in state:'+JSON.stringify(state)+', on feed:'+msg.author)
-    //if the timestamp doesn't increase, they should have noticed at their end.
     if(isNaN(state.timestamp)) throw new Error('state must have timestamp property, on feed:'+msg.author)
+    //if the timestamp doesn't increase, they should have noticed at their end.
     if(msg.timestamp <= state.timestamp)
-      return fatal(new Error('invalid message: timestamp not increasing, on feed:'+msg.author))
+      console.log('invalid message: timestamp not increasing, on feed:'+msg.author)
     //if we have the correct sequence and wrong previous,
     //this must be a fork!
     if(msg.previous != state.id)
@@ -200,8 +200,7 @@ exports.create = function (state, keys, hmac_key, content, timestamp) {
   if(!isObject(content) && !isEncrypted(content))
     throw new Error('invalid message content, must be object or encrypted string')
 
-
-  if(state && +timestamp <= state.timestamp) throw new Error('timestamp must be increasing')
+  if(state && +timestamp <= state.timestamp) console.log('timestamp should be increasing')
   var msg = {
     previous: state ? state.id : null,
     sequence: state ? state.sequence + 1 : 1,
