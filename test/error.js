@@ -90,7 +90,7 @@ function test (hmac_key) {
       state = v.append(state, hmac_key, m)
       t.fail('should have thrown')
     } catch (err) {
-      t.equal(err.fatal, true)
+      t.notEqual(err.fatal, true)
       t.end()
     }
 
