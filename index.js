@@ -67,7 +67,7 @@ var isInvalidShape = exports.isInvalidShape = function (msg) {
   //we will fix at some point...
   var asJson = encode(msg)
   if (asJson.length > 8192) // 8kb
-    return new Error( 'encoded message must not be larger than 8192 bytes')
+    return new Error('encoded message must not be larger than 8192 bytes')
 
   return isInvalidContent(msg.content)
 }
@@ -96,7 +96,7 @@ exports.checkInvalidCheap = function (state, msg) {
     //this must be a fork!
     if(msg.previous != state.id)
       return fatal(new Error('invalid message: expected different previous message, on feed:'+msg.author))
-    //and check type, and length, and some other stuff. finaly check the signature.
+    //and check type, and length, and some other stuff. finally check the signature.
   }
   else {
     if(msg.previous !== null)
@@ -130,7 +130,6 @@ exports.checkInvalid = function (state, hmac_key, msg) {
 */
 
 exports.queue = function (state, msg) {
-  var err
   if(state.error = exports.checkInvalidCheap(flatState(state.feeds[msg.author]), msg))
     return state
   state.feeds[msg.author] = state.feeds[msg.author] || {
