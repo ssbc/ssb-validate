@@ -221,10 +221,7 @@ exports.id = function (msg) {
 
 exports.appendNew = function (state, hmac_key, keys, content, timestamp) {
   var msg = exports.create(state.feeds[keys.id], keys, hmac_key, content, timestamp)
-  state = exports.append(state, msg)
+  state = exports.append(state, hmac_key, msg)
   return state
 }
-
-
-
 
