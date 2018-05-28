@@ -24,6 +24,8 @@ function pseudorandom (seed, length) {
 
 var v = require('..')
 
+var data = []
+
 function test (hmac_key) { 
   var state = v.initial()
   tape('simple', function (t) {
@@ -103,7 +105,7 @@ function test (hmac_key) {
     t.end()
   })
 
-  tape('create with invalid date', function (t) {
+  tape('invalid because of empty content', function (t) {
     t.throws(function () {
       var m = v.create(null, keys, hmac_key, null, Date.now())
     })
@@ -114,88 +116,99 @@ function test (hmac_key) {
         pseudorandom('test', 1024).toString('base64')+'.box'
 
   //create a purposefully invalid message (for testing)
-  function create_invalid (state, keys, hmac_key, content, timestamp) {
-    invalid.push(ssbKeys.signObj(keys, hmac_key, {
+//  function create_invalid (state, keys, hmac_key, content, timestamp) {
+//    invalid.push(ssbKeys.signObj(keys, hmac_key, {
+//      previous: state ? state.id : null,
+//      sequence: state ? state.sequence + 1 : 1,
+//      author: keys.id,
+//      timestamp: +timestamp,
+//      hash: 'sha256',
+//      content: content,
+//    }))
+//    return v.create(state, keys, hmac_key, null, timestamp)
+//  }
+
+  function test_invalid(t, state, keys, hmac_key, content, timestamp) {
+    var msg = ssbKeys.signObj(keys, hmac_key, {
       previous: state ? state.id : null,
       sequence: state ? state.sequence + 1 : 1,
       author: keys.id,
       timestamp: +timestamp,
       hash: 'sha256',
       content: content,
-    }))
-    return v.create(state, keys, hmac_key, null, timestamp)
+    })
+    if(!Buffer.isBuffer(content))
+      data.push({state: state, msg: msg, cap: hmac_key, valid: false})
+    t.throws(function () {
+      console.log(state, v.create(state, keys, hmac_key, content, timestamp))
+    })
+    t.throws(function () {
+      var _state = {feeds: {}}
+      _state.feeds[keys.id] = state
+      v.append(_state, hmac_key, msg)
+    })
+  }
+
+  function test_valid(t, state, keys, hmac_key, content, timestamp) {
+    var msg
+    msg = v.create(state, keys, hmac_key, content, timestamp)
+    data.push({state: state, msg: msg, cap: hmac_key, valid: true})
+    var _state = {queue: [], feeds: {}}
+    _state.feeds[keys.id] = state
+    v.append(_state, hmac_key, msg)
+    t.deepEqual(msg.content, content)
+    t.equal(msg.timestamp, timestamp)
+
   }
 
   var invalid = []
 
-  tape('create with invalid content', function (t) {
+  tape('various invalid first messages', function (t) {
     var date = +new Date('2017-04-11 9:09 UTC')
-    t.throws(function () {
-      var m = create_invalid(null, keys, hmac_key, null, date)
-    })
-    t.throws(function () {
-      var m = create_invalid(null, keys, hmac_key, date)
-    })
-    t.throws(function () {
-      var m = create_invalid(null, keys, hmac_key, false, date)
-    })
-    t.throws(function () {
-      var m = create_invalid(null, keys, hmac_key, 0, date)
-    })
-    t.throws(function () {
-      var m = create_invalid(null, keys, hmac_key, 100, date)
-    })
-    t.throws(function () {
-      var m = create_invalid(null, keys, hmac_key, [], date)
-    }, 'array as content')
-    t.throws(function () {
-      var m = create_invalid(null, keys, hmac_key, new Buffer('hello'), date)
-    }, 'buffer as content')
-    t.throws(function () {
-      var m = create_invalid(null, keys, hmac_key, new Date(date), date)
-    }, 'date as content')
+    test_invalid(t, null, keys, hmac_key, null, date)
+    test_invalid(t, null, keys, hmac_key, date)
+    test_invalid(t, null, keys, hmac_key, false, date)
+    test_invalid(t, null, keys, hmac_key, 0, date)
+    test_invalid(t, null, keys, hmac_key, 100, date)
+    test_invalid(t, null, keys, hmac_key, [], date)
+    test_invalid(t, null, keys, hmac_key, new Buffer('hello'), date)
+    test_invalid(t, null, keys, hmac_key, new Date(date), date)
 
-    t.throws(function () {
-      var m = create_invalid(null, keys, hmac_key, {}, date)
-    })
-    t.throws(function () {
-      var m = create_invalid(null, keys, hmac_key, {tyfe:'not-okay' }, date)
-    })
-
-    t.throws(function () {
-      var m = create_invalid(null, keys, hmac_key, {tyfe:'not-okay' }, date)
-    })
-
-    t.throws(function () {
-      var m = create_invalid(null, keys, hmac_key, {
-        type: //too long!
-          pseudorandom('test', 100).toString('base64')
-      }, date)
-    })
+    test_invalid(t, null, keys, hmac_key, {}, date)
+    test_invalid(t, null, keys, hmac_key, {tyfe:'not-okay' }, date)
+    test_invalid(t,null, keys, hmac_key, {tyfe:'not-okay' }, date)
+    test_invalid(t, null, keys, hmac_key, {
+      type: //too long!
+        pseudorandom('test', 100).toString('base64')
+    }, date)
 
     //type too long
-    t.throws(function () {
-      var m = create_invalid(null, keys, hmac_key, {type:keys.id }, date)
-    })
+    test_invalid(t, null, keys, hmac_key, {type:keys.id }, date)
     // type too short
-    t.throws(function () {
-      var m = create_invalid(null, keys, hmac_key, {type:'T' }, date)
-    })
+    test_invalid(t, null, keys, hmac_key, {type:'T' }, date)
     // type too short
-    t.throws(function () {
-      var m = create_invalid(null, keys, hmac_key, {type:'TT' }, date)
-    })
+    test_invalid(t, null, keys, hmac_key, {type:'TT' }, date)
     // content too long
-    t.throws(function () {
-      var m = create_invalid(
-        null, keys, hmac_key,
-        pseudorandom('test', 8*1024).toString('base64')+'.box',
-        date
-      )
-    }, 'content too long')
+    test_invalid(t,
+      null, keys, hmac_key,
+      pseudorandom('test', 8*1024).toString('base64')+'.box',
+      date
+    )
 
-    if(!hmac_key)
-      fs.writeFileSync(path.join(__dirname, 'data', 'invalid_messages.json'), JSON.stringify(invalid, null, 2))
+    t.end()
+  })
+
+  tape('messages invalid with respect to state', function (t) {
+    var state = {
+      id: '%'+hash('previous'),
+      timestamp: new Date('2018-04-01T00:00:00.000Z'),
+      seq: 27
+    }
+    //non increasing timestamp
+    test_invalid(t, state, keys, hmac_key, {type:'test' }, state.timestamp)
+    //non increasing timestamp 2
+    test_invalid(t, state, keys, hmac_key, {type:'test' }, state.timestamp-1)
+
     t.end()
   })
 
@@ -203,25 +216,19 @@ function test (hmac_key) {
     var msg
 
     //type must be 3 chars
-    var msg = v.create(null, keys, hmac_key, {type:'TTT' }, +new Date('2017-04-11 9:09 UTC'))
-    t.deepEqual(msg.content, {type: 'TTT'})
+    test_valid(t, null, keys, hmac_key, {type:'TTT' }, +new Date('2017-04-11 9:09 UTC'))
 
     //type can be msg id
-    var msg_id = '%'+crypto.randomBytes(32).toString('base64')+'.sha256'
-    msg = v.create(null, keys2, hmac_key, {type: msg_id}, +new Date('2017-04-11 9:09 UTC'))
-    t.deepEqual(msg.content, {type: msg_id})
+    var msg_id = '%'+hash('test_msg_id').toString('base64')+'.sha256'
+    test_valid(t, null, keys2, hmac_key, {type: msg_id}, +new Date('2017-04-11 9:09 UTC'))
 
     //content can be encrypted.
-    msg = v.create(null, keys2, hmac_key, ctxt, +new Date('2017-04-11 9:09 UTC'))
-    t.equal(msg.content, ctxt)
-    //content can be encrypted.
+    test_valid(t, null, keys2, hmac_key, ctxt, +new Date('2017-04-11 9:09 UTC'))
 
     //content encrypted with future private box version
-    msg = v.create(null, keys2, hmac_key, ctxt+'2', +new Date('2017-04-11 9:09 UTC'))
-    t.equal(msg.content, ctxt+'2')
+    test_valid(t, null, keys2, hmac_key, ctxt+'2', +new Date('2017-04-11 9:09 UTC'))
 
-    msg = v.create(null, keys, hmac_key, {type: 'okay'}, Date.now())
-    t.deepEqual(msg.content, {type: 'okay'})
+    test_valid(t, null, keys, hmac_key, {type: 'okay'}, +new Date('2019-01-01 0:00 UTC'))
 
     //for backwards compatibilty reasons, we only count the
     //javascript string length of a message, so it may actually
@@ -236,11 +243,13 @@ function test (hmac_key) {
     for(var i = 0; i < 7000; i++)
       text += '\u20ac'
     t.ok(text.length < 8124)
+
     console.log(text.length)
     console.log(new Buffer(JSON.stringify({text: text}), 'utf8').length)
+
     t.ok(new Buffer(JSON.stringify({text: text}), 'utf8').length > 8000)
-    msg = v.create(null, keys, hmac_key, {type: 'euros', text: text}, Date.now())
-    t.deepEqual(msg.content, {type: 'euros', text: text})
+
+    test_valid(t, null, keys, hmac_key, {type: 'euros', text: text}, +new Date('2019-01-01 0:00 UTC'))
 
     t.end()
   })
@@ -248,7 +257,11 @@ function test (hmac_key) {
 }
 
 test()
-test(hash('hmac_key'))
-test(hash('hmac_key2'))
+test(hash('hmac_key').toString('base64'))
+test(hash('hmac_key2').toString('base64'))
 
+tape('write data', function (t) {
+  fs.writeFileSync(path.join(__dirname, 'data', 'test_messages.json'), JSON.stringify(data, null, 2))
+  t.end()
+})
 
