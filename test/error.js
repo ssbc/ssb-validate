@@ -200,9 +200,9 @@ function test (hmac_key) {
 
   tape('messages invalid with respect to state', function (t) {
     var state = {
-      id: '%'+hash('previous'),
+      id: '%'+hash('previous').toString('base64')+'.sha256',
       timestamp: new Date('2018-04-01T00:00:00.000Z'),
-      seq: 27
+      sequence: 27, queue: []
     }
     //non increasing timestamp
     test_invalid(t, state, keys, hmac_key, {type:'test' }, state.timestamp)
@@ -253,6 +253,83 @@ function test (hmac_key) {
 
     t.end()
   })
+
+  //between 2017-12 and 2018-03 there were a few messages
+  //that went back in time. a number of clients allowed these
+  //messages at the time. only a handful of messages are effected,
+  //but our policy is to make immutable bugs part of the spec.
+
+  tape("valid messages, via @elavoi's time travel exception", function (t) {
+    var start = new Date('2017-12-01')
+    var end = new Date('2018-03-01')
+    var hour = 100*60*60
+    var state = {
+      id: '%'+hash('previous').toString('base64')+'.sha256',
+      timestamp: +start,
+      sequence: 27, queue: []
+    }
+    //non increasing timestamp, allowed due to exception
+    test_valid(t, state, keys, hmac_key, {type:'test' }, state.timestamp)
+    //non increasing timestamp, just outside of exception
+    test_invalid(t, state, keys, hmac_key, {type:'test' }, state.timestamp-1)
+
+    var state2 = {
+      id: '%'+hash('previous').toString('base64')+'.sha256',
+      timestamp: +start+ hour*12,
+      sequence: 27, queue: []
+    }
+    test_valid(t,
+      state2, keys, hmac_key, {type:'test' }, state2.timestamp-1,
+      'decreasing timestamp, within 6 hours, allowed due to exception'
+    )
+    test_valid(t,
+      state2, keys, hmac_key, {type:'test' }, state2.timestamp-6*hour+1,
+      'decreasing timestamp, within 6 hours, allowed due to exception'
+    )
+    test_valid(t,
+      state2, keys, hmac_key, {type:'test' }, state2.timestamp-6*hour,
+      'exactly 6 hours is allowed by exception'
+    )
+
+    //exception not within 6 hours
+    test_invalid(t,
+      state2, keys, hmac_key, {type:'test' }, state2.timestamp-6*hour-1,
+      'exception not within 6 hours'
+    )
+
+    var state3 = {
+      id: '%'+hash('previous').toString('base64')+'.sha256',
+      timestamp: +end-1,
+      sequence: 29, queue: []
+    }
+
+    test_valid(t,
+      state3, keys, hmac_key, {type:'test' }, state3.timestamp-6*hour,
+      'exactly 6 hours is allowed by exception, up to just before MAR 1 2018'
+    )
+    test_valid(t,
+      state3, keys, hmac_key, {type:'test' }, state3.timestamp,
+      'exactly 6 hours is allowed by exception, up to just before MAR 1 2018'
+    )
+
+    var state3 = {
+      id: '%'+hash('previous').toString('base64')+'.sha256',
+      timestamp: +end,
+      sequence: 29, queue: []
+    }
+
+    test_invalid(t,
+      state3, keys, hmac_key, {type:'test' }, state3.timestamp,
+      'from MAR 1 2018 timestamp must be strictly monotonic again'
+    )
+    test_invalid(t,
+      state3, keys, hmac_key, {type:'test' }, state3.timestamp-1,
+      'from MAR 1 2018 timestamp must be strictly monotonic again'
+    )
+
+    t.end()
+  })
+
 
 }
 
