@@ -18,7 +18,6 @@ exports.initial = function () {
   }
 }
 
-
 function isString (s) {
   return s && 'string' === typeof s
 }
@@ -90,7 +89,8 @@ exports.checkInvalidCheap = function (state, msg) {
       return new Error('invalid message: expected sequence ' + (state.sequence + 1) + ' but got:'+ msg.sequence + 'in state:'+JSON.stringify(state)+', on feed:'+msg.author)
     //if the timestamp doesn't increase, they should have noticed at their end.
     if(isNaN(state.timestamp)) throw new Error('state must have timestamp property, on feed:'+msg.author)
-    if(msg.timestamp <= state.timestamp)
+    if(isNaN(msg.timestamp)) return fatal(new Error('msg must have timestamp property, on feed:'+msg.author))
+    if(!isAcceptableTimestamp(state.timestamp, msg.timestamp))
       return fatal(new Error('invalid message: timestamp not increasing, on feed:'+msg.author))
     //if we have the correct sequence and wrong previous,
     //this must be a fork!
@@ -155,10 +155,9 @@ function flatState (fstate) {
 }
 
 exports.append = function (state, hmac_key, msg) {
-  var err
   var _state = flatState(state.feeds[msg.author])
-  if(err = exports.checkInvalid(_state, hmac_key, msg))
-    throw err
+  var err = exports.checkInvalid(_state, hmac_key, msg)
+  if(err) throw err
 
   else if(state.feeds[msg.author]) {
     var a = state.feeds[msg.author]
@@ -183,6 +182,9 @@ exports.append = function (state, hmac_key, msg) {
   return state
 }
 
+var DEC_2017 = new Date('2017-12-01T00:00:00.000Z')
+var MAR_2018 = new Date('2018-03-01T00:00:00.000Z')
+var HOUR = 60*60*1000
 exports.validate = function (state, hmac_key, feed) {
   if(!state.feeds[feed] || !state.feeds[feed].queue.length) {
     return state
@@ -192,15 +194,24 @@ exports.validate = function (state, hmac_key, feed) {
   return exports.append(state, hmac_key, msg)
 }
 
+function isAcceptableTimestamp (before, after) {
+  if(before < after) return true
+  if(
+    //within 6 hours
+    before < after + HOUR*6 &&
+    after >= DEC_2017 && before < MAR_2018
+  ) return true
+  return false
+}
+
 //pass in your own timestamp, so it's completely deterministic
 exports.create = function (state, keys, hmac_key, content, timestamp) {
-  if(timestamp == null || isNaN(+timestamp)) throw new Error('timestamp must be provided')
+  if(timestamp == null || isNaN(+timestamp)) throw new Error('timestamp must be provided, was:' + timestamp)
   state = flatState(state)
   if(!isObject(content) && !isEncrypted(content))
     throw new Error('invalid message content, must be object or encrypted string')
 
-
-  if(state && +timestamp <= state.timestamp) throw new Error('timestamp must be increasing')
+  if(state && !isAcceptableTimestamp(state.timestamp, +timestamp)) throw new Error('timestamp must be increasing')
   var msg = {
     previous: state ? state.id : null,
     sequence: state ? state.sequence + 1 : 1,
@@ -224,4 +235,5 @@ exports.appendNew = function (state, hmac_key, keys, content, timestamp) {
   state = exports.append(state, hmac_key, msg)
   return state
 }
+
 
