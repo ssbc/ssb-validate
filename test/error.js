@@ -81,12 +81,12 @@ function test (hmac_key) {
   tape('invalid - rewind', function (t) {
 
     var last = state.queue[9]
-      var m = v.create({
-        id: state.feeds[keys.id].id,
-        sequence: 10,
-        timestamp: last.timestamp-2, queue: []
-      }, keys, hmac_key, {type: 'invalid'}, last.timestamp-1)
-      console.log(m, last)
+    var m = v.create({
+      id: state.feeds[keys.id].id,
+      sequence: 10,
+      timestamp: last.timestamp-(7*60*60*1000), queue: []
+    }, keys, hmac_key, {type: 'invalid'}, last.timestamp-(7*60*60*1000)+1)
+    console.log(m, last)
 
     try {
       state = v.append(state, hmac_key, m)
@@ -96,6 +96,26 @@ function test (hmac_key) {
       t.end()
     }
 
+  })
+
+  tape('invalid - rewind but within margin', function (t) {
+
+    var last = state.queue[9]
+    var m = v.create({
+      id: state.feeds[keys.id].id,
+      sequence: 10,
+      timestamp: last.timestamp-(5*60*60*1000), queue: []
+    }, keys, hmac_key, {type: 'invalid'}, last.timestamp-(5*60*60*1000)+1)
+    console.log(m, last)
+
+    try {
+      state = v.append(state, hmac_key, m)
+    } catch (err) {
+      console.log(err)
+      t.fail('should not throw')
+    }
+
+    t.end()
   })
 
   tape('create with invalid date', function (t) {
