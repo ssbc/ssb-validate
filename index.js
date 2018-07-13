@@ -90,8 +90,6 @@ exports.checkInvalidCheap = function (state, msg) {
       return new Error('invalid message: expected sequence ' + (state.sequence + 1) + ' but got:'+ msg.sequence + 'in state:'+JSON.stringify(state)+', on feed:'+msg.author)
     //if the timestamp doesn't increase, they should have noticed at their end.
     if(isNaN(state.timestamp)) throw new Error('state must have timestamp property, on feed:'+msg.author)
-    if(msg.timestamp <= state.timestamp)
-      return fatal(new Error('invalid message: timestamp not increasing, on feed:'+msg.author))
     //if we have the correct sequence and wrong previous,
     //this must be a fork!
     if(msg.previous != state.id)

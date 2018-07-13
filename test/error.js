@@ -77,25 +77,18 @@ function test (hmac_key) {
 
   })
 
-
-  tape('invalid - rewind', function (t) {
-
+  // monotonic timestamps no longer a requirement
+  tape('rewind ok', function (t) {
     var last = state.queue[9]
-      var m = v.create({
-        id: state.feeds[keys.id].id,
-        sequence: 10,
-        timestamp: last.timestamp-2, queue: []
-      }, keys, hmac_key, {type: 'invalid'}, last.timestamp-1)
-      console.log(m, last)
+    var m = v.create({
+      id: state.feeds[keys.id].id,
+      sequence: 10,
+      timestamp: last.timestamp-2, queue: []
+    }, keys, hmac_key, {type: 'invalid'}, last.timestamp-1)
+    console.log(m, last)
 
-    try {
-      state = v.append(state, hmac_key, m)
-      t.fail('should have thrown')
-    } catch (err) {
-      t.equal(err.fatal, true)
-      t.end()
-    }
-
+    state = v.append(state, hmac_key, m)
+    t.end()
   })
 
   tape('create with invalid date', function (t) {
@@ -194,20 +187,6 @@ function test (hmac_key) {
       pseudorandom('test', 8*1024).toString('base64')+'.box',
       date
     )
-
-    t.end()
-  })
-
-  tape('messages invalid with respect to state', function (t) {
-    var state = {
-      id: '%'+hash('previous'),
-      timestamp: new Date('2018-04-01T00:00:00.000Z'),
-      seq: 27
-    }
-    //non increasing timestamp
-    test_invalid(t, state, keys, hmac_key, {type:'test' }, state.timestamp)
-    //non increasing timestamp 2
-    test_invalid(t, state, keys, hmac_key, {type:'test' }, state.timestamp-1)
 
     t.end()
   })
