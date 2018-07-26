@@ -4,7 +4,7 @@ var isHash = ref.isHash
 var isFeedId = ref.isFeedId
 
 var encode = exports.encode = function (obj) {
-  return JSON.stringify(obj, null, 2)
+  return JSON.stringify(obj)
 }
 
 exports.initial = function () {
@@ -65,8 +65,7 @@ var isInvalidShape = exports.isInvalidShape = function (msg) {
   //for latin1 it's gonna be 8k, but if you use all utf8 you can
   //approach 32k. This is a weird legacy thing, obviously, that
   //we will fix at some point...
-  var asJson = encode(msg)
-  if (asJson.length > 8192) // 8kb
+  if (encode(msg).length > 8192) // 8kb
     return new Error('encoded message must not be larger than 8192 bytes')
 
   return isInvalidContent(msg.content)
@@ -214,7 +213,7 @@ exports.create = function (state, keys, hmac_key, content, timestamp) {
 }
 
 exports.id = function (msg) {
-  return '%'+ssbKeys.hash(JSON.stringify(msg, null, 2))
+  return '%'+ssbKeys.hash(encode(msg))
 }
 
 exports.appendNew = function (state, hmac_key, keys, content, timestamp) {
