@@ -2,10 +2,10 @@
   "name": "ssb-validate",
   "description": "simplified validation for secure-scuttlebutt",
   "version": "3.0.10",
-  "homepage": "https://github.com/dominictarr/ssb-validate",
+  "homepage": "https://github.com/ssbc/ssb-validate",
   "repository": {
     "type": "git",
-    "url": "git://github.com/dominictarr/ssb-validate.git"
+    "url": "git://github.com/ssbc/ssb-validate.git"
   },
   "dependencies": {
     "ssb-ref": "^2.6.2"
