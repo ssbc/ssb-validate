@@ -6,6 +6,7 @@ var isFeedId = ref.isFeedId
 function isValidOrder (msg, signed) {
   var i = 0
   var keys = Object.keys(msg)
+  if(signed && keys.length !== 7) return false
   if(
     keys[0] !== 'previous' ||
     keys[3] !== 'timestamp' ||
@@ -252,4 +253,5 @@ exports.appendNew = function (state, hmac_key, keys, content, timestamp) {
   state = exports.append(state, hmac_key, msg)
   return state
 }
+
 
