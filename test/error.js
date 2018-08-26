@@ -262,6 +262,40 @@ function test (hmac_key) {
     t.end()
   })
 
+  tape('disallow extra fields', function (t) {
+
+    var msg = ssbKeys.signObj(keys, hmac_key, {
+      previous: null,
+      author: keys.id,
+      sequence: 1,
+      timestamp: +new Date('2017-04-11 9:09 UTC'),
+      hash: 'sha256',
+      content: {type: 'invalid'},
+      extra: 'INVALID'
+    })
+    var signature = msg.signature
+    delete msg.signature
+    delete msg.extra
+    msg.signature = signature
+    msg.extra = 'INVALID'
+    var state = {
+      queue: [],
+      feeds: {},
+      validated: 0
+    }
+    data.push({state: state, msg: msg, cap: hmac_key, valid: false})
+
+    t.throws(function () {
+      console.log(v.append(state, hmac_key, msg))
+    })
+    t.throws(function () {
+      var _state = {feeds: {}}
+      _state.feeds[keys.id] = state
+      v.append(_state, hmac_key, msg)
+    })
+    t.end()
+  })
+
   tape('valid messages', function (t) {
     var msg
 
