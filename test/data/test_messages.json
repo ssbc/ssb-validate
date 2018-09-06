@@ -282,6 +282,26 @@
     "valid": false
   },
   {
+    "state": {
+      "queue": [],
+      "feeds": {},
+      "validated": 0
+    },
+    "msg": {
+      "previous": null,
+      "author": "@AzvddyStfk/T95/3VuHxuJRwqqpBkCyoW7qHRCui2N4=.ed25519",
+      "sequence": 1,
+      "timestamp": 1491901740000,
+      "hash": "sha256",
+      "content": {
+        "type": "invalid"
+      },
+      "signature": "dQ18jiI+Xv1e2iHL2oXTj2+ytLimg7Wnwwf7K3biBtgdGSs7IDuelJzA03iCG/QY/o/1meo4Wr/l086Hg/pyCQ==.sig.ed25519",
+      "extra": "INVALID"
+    },
+    "valid": false
+  },
+  {
     "state": null,
     "msg": {
       "previous": null,
@@ -695,6 +715,27 @@
       },
       "hash": "sha256",
       "signature": "cr9jnhmtBht0MkpA7rndmY7b++6Cfr5mFTNJuu0UYerrNP2fswPtiD6b2frEkfHLBnZHOY1+jmyWOgiDQgKaCw==.sig.ed25519"
+    },
+    "cap": "Z0e2zyrmHeit5ydNjaw2bLlrHBwx9UcivTAAGquwQ+Y=",
+    "valid": false
+  },
+  {
+    "state": {
+      "queue": [],
+      "feeds": {},
+      "validated": 0
+    },
+    "msg": {
+      "previous": null,
+      "author": "@AzvddyStfk/T95/3VuHxuJRwqqpBkCyoW7qHRCui2N4=.ed25519",
+      "sequence": 1,
+      "timestamp": 1491901740000,
+      "hash": "sha256",
+      "content": {
+        "type": "invalid"
+      },
+      "signature": "q2EeeyfGsrLkXecQq0Ztcjoe4u18jX2sPFSYDCf1B3d8nX1GK1cTGZEXqjg29yNubKYWPkzAHGDrMofNfuJOCw==.sig.ed25519",
+      "extra": "INVALID"
     },
     "cap": "Z0e2zyrmHeit5ydNjaw2bLlrHBwx9UcivTAAGquwQ+Y=",
     "valid": false
@@ -1121,6 +1162,27 @@
       },
       "hash": "sha256",
       "signature": "7Z5YDuudQHNV5TcUjd/6Rlf1etSiOch+iiS9i+jwoTqGcB1vU5mCw0hOh7ZjEszrxkZVMc8bOU2e2MoNYQLEDQ==.sig.ed25519"
+    },
+    "cap": "hzUz4WE4y+96ZiKqhACK3Z3/zuLD6PYTHOZUbbDmass=",
+    "valid": false
+  },
+  {
+    "state": {
+      "queue": [],
+      "feeds": {},
+      "validated": 0
+    },
+    "msg": {
+      "previous": null,
+      "author": "@AzvddyStfk/T95/3VuHxuJRwqqpBkCyoW7qHRCui2N4=.ed25519",
+      "sequence": 1,
+      "timestamp": 1491901740000,
+      "hash": "sha256",
+      "content": {
+        "type": "invalid"
+      },
+      "signature": "tECMcZunn58MckGfUBL0GTqiy7Svfqs2Z+vgqxmdz5i5cjHg/WR4Glj1HX4B0ioSa+HeDyOBVG5s2HhXEEtUCQ==.sig.ed25519",
+      "extra": "INVALID"
     },
     "cap": "hzUz4WE4y+96ZiKqhACK3Z3/zuLD6PYTHOZUbbDmass=",
     "valid": false
