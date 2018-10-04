@@ -132,8 +132,6 @@ exports.checkInvalidCheap = function (state, msg) {
   }
   if(!isValidOrder(msg, true))
     return fatal(new Error('message must have keys in allowed order'))
-  if(!isSupportedHash(msg))
-    return fatal(new Error('message had an unknown hash'))
 
   return isInvalidShape(msg)
 }
