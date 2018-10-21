@@ -8,6 +8,7 @@
     "url": "git://github.com/dominictarr/ssb-validate.git"
   },
   "dependencies": {
+    "canonical-base64": "^1.1.0",
     "ssb-ref": "^2.6.2"
   },
   "devDependencies": {
