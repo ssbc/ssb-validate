@@ -3,6 +3,13 @@ var ssbKeys = require('ssb-keys')
 var isHash = ref.isHash
 var isFeedId = ref.isFeedId
 
+var createCanonicalBase64 = require('canonical-base64')
+var isSignatureRx = createCanonicalBase64('','\.sig\.ed25519', 64)
+
+//NOTE: does not match end of string,
+//so future box version are accepted.
+var isEncryptedRx = createCanonicalBase64('','\.box.*')
+
 function isValidOrder (msg, signed) {
   var i = 0
   var keys = Object.keys(msg)
@@ -52,9 +59,7 @@ function isObject (o) {
 }
 
 function isEncrypted (str) {
-  //NOTE: does not match end of string,
-  //so future box version are accepted.
-  return isString(str) && /^[0-9A-Za-z\/+]+={0,2}\.box/.test(str)
+  return isEncryptedRx.test(str)
 }
 
 var isInvalidContent = exports.isInvalidContent = function (content) {
@@ -62,7 +67,7 @@ var isInvalidContent = exports.isInvalidContent = function (content) {
     var type = content.type
     if (!(isString(type) && type.length <= 52 && type.length >= 3)) {
       return new Error('type must be a string' +
-        '3 <= type.length < 52, was:' + type
+        '3 <= type.length <= 52, was:' + type
       )
     }
   }
@@ -134,6 +139,8 @@ exports.checkInvalidCheap = function (state, msg) {
     return fatal(new Error('message must have keys in allowed order'))
   if(!isSupportedHash(msg))
     return fatal(new Error('message had an unknown hash'))
+  if(!isSignatureRx.test(msg.signature))
+    return fatal(new Error('signature not canonical base64'))
 
   return isInvalidShape(msg)
 }
@@ -253,5 +260,7 @@ exports.appendNew = function (state, hmac_key, keys, content, timestamp) {
   state = exports.append(state, hmac_key, msg)
   return state
 }
+
+
 
 
