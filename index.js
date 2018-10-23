@@ -2,6 +2,7 @@ var ref = require('ssb-ref')
 var ssbKeys = require('ssb-keys')
 var isHash = ref.isHash
 var isFeedId = ref.isFeedId
+var timestamp = require('monotonic-timestamp')
 
 function isValidOrder (msg, signed) {
   var i = 0
@@ -163,8 +164,16 @@ exports.queue = function (state, msg) {
     id: null, sequence: null, timestamp: null, queue: []
   }
   state.queued += 1
-  state.feeds[msg.author].queue.push(msg)
+  state.feeds[msg.author].queue.push(exports.toKeyValueTimestamp(msg))
   return state
+}
+
+exports.toKeyValueTimestamp = function (msg, id) {
+  return {
+    key: id ? id : exports.id(msg),
+    value: msg,
+    timestamp: timestamp()
+  }
 }
 
 function flatState (fstate) {
@@ -172,9 +181,9 @@ function flatState (fstate) {
   if(fstate.queue.length) {
     var last = fstate.queue[fstate.queue.length - 1]
     return {
-      id: exports.id(last),
-      timestamp: last.timestamp,
-      sequence: last.sequence
+      id: last.key,
+      timestamp: last.value.timestamp,
+      sequence: last.value.sequence
     }
   }
   else
@@ -184,12 +193,13 @@ function flatState (fstate) {
 exports.append = function (state, hmac_key, msg) {
   var err
   var _state = flatState(state.feeds[msg.author])
+  var msg_id = exports.id(msg)
+
   if(err = exports.checkInvalid(_state, hmac_key, msg))
     throw err
-
   else if(state.feeds[msg.author]) {
     var a = state.feeds[msg.author]
-    a.id = exports.id(msg)
+    a.id = msg_id
     a.sequence = msg.sequence
     a.timestamp = msg.timestamp
     var q = state.feeds[msg.author].queue
@@ -201,7 +211,7 @@ exports.append = function (state, hmac_key, msg) {
   }
   else if(msg.sequence === 1) {
     state.feeds[msg.author] = {
-      id: exports.id(msg),
+      id: msg_id,
       sequence: msg.sequence,
       timestamp: msg.timestamp,
       queue: []
@@ -212,7 +222,7 @@ exports.append = function (state, hmac_key, msg) {
     state.waiting.push(msg)
   }
 
-  state.queue.push(msg)
+  state.queue.push(exports.toKeyValueTimestamp(msg, msg_id))
   state.validated += 1
   return state
 }
@@ -221,9 +231,9 @@ exports.validate = function (state, hmac_key, feed) {
   if(!state.feeds[feed] || !state.feeds[feed].queue.length) {
     return state
   }
-  var msg = state.feeds[feed].queue.pop()
+  var kvt = state.feeds[feed].queue.pop()
   state.queued -= 1
-  return exports.append(state, hmac_key, msg)
+  return exports.append(state, hmac_key, kvt.value)
 }
 
 //pass in your own timestamp, so it's completely deterministic

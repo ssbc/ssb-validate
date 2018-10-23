@@ -27,7 +27,7 @@ function test (hmac_key) {
     t.equal(fstate.timestamp, msg.timestamp)
     t.equal(fstate.sequence, msg.sequence)
     t.deepEqual(fstate.queue, [])
-    t.deepEqual(state.queue, [msg])
+    t.deepEqual(state.queue.map(q => q.value), [msg])
 
     var msg_invalid = v.create(null, keys, hmac_key, {type: 'test'}, +new Date('2017-04-11 8:08 UTC'))
     t.ok(v.checkInvalidCheap(fstate, msg), 'cheap checks are invalid (on invalid message)')
@@ -51,15 +51,15 @@ function test (hmac_key) {
     t.equal(fstate.timestamp, msg.timestamp)
     t.equal(fstate.sequence, msg.sequence)
 
-    t.deepEqual(fstate.queue, [msg2])
-    t.deepEqual(state.queue, [msg])
+    t.deepEqual(fstate.queue.map(q => q.value), [msg2])
+    t.deepEqual(state.queue.map(q => q.value), [msg])
 
     var msg3 = v.create(fstate, keys, hmac_key, {type: 'test2'}, +new Date('2017-04-11 8:10 UTC'))
     t.equal(msg3.previous, v.id(msg2))
 
     state = v.append(state, hmac_key, msg3)
 
-    t.deepEqual(state.queue, [msg, msg2, msg3])
+    t.deepEqual(state.queue.map(q => q.value), [msg, msg2, msg3])
     console.log(state)
     t.end()
   })
@@ -75,7 +75,7 @@ function test (hmac_key) {
     t.equal(fstate.id, null)
     t.equal(fstate.timestamp, null)
     t.equal(fstate.sequence, null)
-    t.deepEqual(fstate.queue, [msg])
+    t.deepEqual(fstate.queue.map(q => q.value), [msg])
 
     t.equal(state.queued, 1)
 
