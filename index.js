@@ -195,16 +195,23 @@ exports.append = function (state, hmac_key, msg) {
     var q = state.feeds[msg.author].queue
     state.validated += q.length
     state.queued -= q.length
-    while(q.length)
-      state.queue.push(q.shift())
+    for (var i = 0; i < q.length; ++i)
+      state.queue.push(q[i])
+    q = []
   }
   else if(msg.sequence === 1) {
-    state.feeds[msg.author] = {id: exports.id(msg), sequence: msg.sequence, timestamp: msg.timestamp, queue: []}
+    state.feeds[msg.author] = {
+      id: exports.id(msg),
+      sequence: msg.sequence,
+      timestamp: msg.timestamp,
+      queue: []
+    }
   }
   else {
     //waiting for initial state to be loaded
     state.waiting.push(msg)
   }
+
   state.queue.push(msg)
   state.validated += 1
   return state
@@ -222,19 +229,21 @@ exports.validate = function (state, hmac_key, feed) {
 //pass in your own timestamp, so it's completely deterministic
 exports.create = function (state, keys, hmac_key, content, timestamp) {
   if(timestamp == null || isNaN(+timestamp)) throw new Error('timestamp must be provided')
-  state = flatState(state)
+
   if(!isObject(content) && !isEncrypted(content))
     throw new Error('invalid message content, must be object or encrypted string')
 
+  state = flatState(state)
 
   if(state && +timestamp <= state.timestamp) throw new Error('timestamp must be increasing')
+
   var msg = {
     previous: state ? state.id : null,
     sequence: state ? state.sequence + 1 : 1,
     author: keys.id,
     timestamp: +timestamp,
     hash: 'sha256',
-    content: content,
+    content: content
   }
 
   var err = isInvalidShape(msg)
