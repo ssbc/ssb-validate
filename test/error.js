@@ -46,6 +46,7 @@ function test (hmac_key) {
 
     for(var i = 0; i < state.queue.length; i++) {
       try {
+        console.log(state.queue[i])
         state = v.append(state, hmac_key, state.queue[i])
         t.fail('should have thrown')
       } catch (err) {
@@ -142,6 +143,28 @@ function test (hmac_key) {
     })
   }
 
+  //create invalid messages with invalid orders
+  function test_invalid_msg(t, state, keys, hmac_key, _msg) {
+    var msg = ssbKeys.signObj(keys, hmac_key, _msg)
+    if(!state)
+      state = {
+        queue: [],
+        feeds: {},
+        validated: 0
+      }
+    data.push({state: state, msg: msg, cap: hmac_key, valid: false})
+
+    t.throws(function () {
+      console.log(v.append(state, hmac_key, msg))
+    })
+    t.throws(function () {
+      var _state = {feeds: {}}
+      _state.feeds[keys.id] = state
+      v.append(_state, hmac_key, msg)
+    })
+  }
+
+
   function test_valid(t, state, keys, hmac_key, content, timestamp) {
     var msg
     msg = v.create(state, keys, hmac_key, content, timestamp)
@@ -153,6 +176,15 @@ function test (hmac_key) {
     t.equal(msg.timestamp, timestamp)
 
   }
+
+  function test_valid_msg(t, state, keys, hmac_key, _msg) {
+    var msg = ssbKeys.signObj(keys, hmac_key, _msg)
+    data.push({state: state, msg: msg, cap: hmac_key, valid: true})
+    var _state = {queue: [], feeds: {}}
+    _state.feeds[keys.id] = state
+    v.append(_state, hmac_key, msg)
+  }
+
 
   var invalid = []
 
@@ -191,11 +223,107 @@ function test (hmac_key) {
     t.end()
   })
 
+  tape('extended invalid first messages', function (t) {
+    var date = +new Date('2017-04-11 9:09 UTC')
+    test_invalid_msg(t, null, keys, hmac_key, {
+      previous: null,
+      author: keys.id,
+      sequence: 1,
+      timestamp: +date,
+      hash: 'oanteuhnoatehuneotuh', //unsupported hash
+      content: {type:'invalid'}
+    })
+    test_invalid_msg(t, null, keys, hmac_key, {
+      previous: null,
+      author: keys.id,
+      sequence: 1,
+      timestamp: +date,
+      //missing hash
+      content: {type:'invalid'}
+    })
+    //invalid orders
+    test_invalid_msg(t, null, keys, hmac_key, {
+      content: {type:'invalid'},
+      hash: 'sha256',
+      author: keys.id,
+      timestamp: +date,
+      sequence: 1,
+      previous: null,
+    })
+    test_invalid_msg(t, null, keys, hmac_key, {
+      previous: null,
+      author: keys.id,
+      sequence: 1,
+      timestamp: +date,
+      content: {type:'invalid'},
+      hash: 'sha256',
+    })
+
+    t.end()
+  })
+
+  tape('disallow extra fields', function (t) {
+
+    var msg = ssbKeys.signObj(keys, hmac_key, {
+      previous: null,
+      author: keys.id,
+      sequence: 1,
+      timestamp: +new Date('2017-04-11 9:09 UTC'),
+      hash: 'sha256',
+      content: {type: 'invalid'},
+      extra: 'INVALID'
+    })
+    var signature = msg.signature
+    delete msg.signature
+    delete msg.extra
+    msg.signature = signature
+    msg.extra = 'INVALID'
+    var state = {
+      queue: [],
+      feeds: {},
+      validated: 0
+    }
+    data.push({state: state, msg: msg, cap: hmac_key, valid: false})
+
+    t.throws(function () {
+      console.log(v.append(state, hmac_key, msg))
+    })
+    t.throws(function () {
+      var _state = {feeds: {}}
+      _state.feeds[keys.id] = state
+      v.append(_state, hmac_key, msg)
+    })
+    t.end()
+  })
+
   tape('valid messages', function (t) {
     var msg
 
     //type must be 3 chars
     test_valid(t, null, keys, hmac_key, {type:'TTT' }, +new Date('2017-04-11 9:09 UTC'))
+
+    //author and sequence fields may come in either order!
+    //all other fields must be in exact order.
+    test_valid_msg(t, null, keys, hmac_key, {
+      previous: null,
+
+      author: keys.id, sequence: 1,
+
+      timestamp: +new Date('2017-04-11 9:09 UTC'),
+      hash: 'sha256',
+      content: { type: 'valid' }
+    })
+
+    test_valid_msg(t, null, keys, hmac_key, {
+      previous: null,
+
+      sequence: 1, author: keys.id,
+
+      timestamp: +new Date('2017-04-11 9:09 UTC'),
+      hash: 'sha256',
+      content: { type: 'valid' }
+    })
+
 
     //type can be msg id
     var msg_id = '%'+hash('test_msg_id').toString('base64')+'.sha256'
@@ -243,4 +371,10 @@ tape('write data', function (t) {
   fs.writeFileSync(path.join(__dirname, 'data', 'test_messages.json'), JSON.stringify(data, null, 2))
   t.end()
 })
+
+
+
+
+
+
 

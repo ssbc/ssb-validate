@@ -13,7 +13,7 @@ require('ssb-client')(function (err, sbot) {
   pull(
     sbot.createLogStream(),
     pull.drain(function (msg) {
-      state = v.append(state, msg.value)
+      state = v.append(state, null, msg.value)
       if(state.error) {
         e++
         var err = state.error

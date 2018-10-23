@@ -3,6 +3,26 @@ var ssbKeys = require('ssb-keys')
 var isHash = ref.isHash
 var isFeedId = ref.isFeedId
 
+function isValidOrder (msg, signed) {
+  var i = 0
+  var keys = Object.keys(msg)
+  if(signed && keys.length !== 7) return false
+  if(
+    keys[0] !== 'previous' ||
+    keys[3] !== 'timestamp' ||
+    keys[4] !== 'hash' ||
+    keys[5] !== 'content' ||
+    (signed && keys[6] !== 'signature')
+  ) return false
+  //author and signature may be swapped.
+  if(!(
+    (keys[1] === 'sequence' && keys[2] === 'author') ||
+    (keys[1] === 'author' && keys[2] === 'sequence')
+  ))
+    return false
+  return true
+}
+
 var encode = exports.encode = function (obj) {
   return JSON.stringify(obj, null, 2)
 }
@@ -49,12 +69,18 @@ var isInvalidContent = exports.isInvalidContent = function (content) {
   return false
 }
 
+var isSupportedHash = exports.isSupportedHash = function (msg) {
+  return msg.hash === 'sha256'
+}
+
 var isInvalidShape = exports.isInvalidShape = function (msg) {
   if(
     !isObject(msg) ||
     !isInteger(msg.sequence) ||
     !isFeedId(msg.author) ||
-    !(isObject(msg.content) || isEncrypted(msg.content))
+    !(isObject(msg.content) || isEncrypted(msg.content)) ||
+    !isValidOrder(msg, false) || //false, because message may not be signed yet.
+    !isSupportedHash(msg)
   )
     return new Error('message has invalid properties:'+JSON.stringify(msg, null, 2))
 
@@ -104,6 +130,11 @@ exports.checkInvalidCheap = function (state, msg) {
     if('number' !== typeof msg.timestamp)
       return fatal(new Error('initial message must have timestamp, on feed:'+msg.author))
   }
+  if(!isValidOrder(msg, true))
+    return fatal(new Error('message must have keys in allowed order'))
+  if(!isSupportedHash(msg))
+    return fatal(new Error('message had an unknown hash'))
+
   return isInvalidShape(msg)
 }
 
@@ -222,4 +253,5 @@ exports.appendNew = function (state, hmac_key, keys, content, timestamp) {
   state = exports.append(state, hmac_key, msg)
   return state
 }
+
 
