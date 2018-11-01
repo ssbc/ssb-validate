@@ -34,8 +34,7 @@ exports.initial = function () {
     queued: 0,
     queue: [],
     feeds: {},
-    error: null,
-    waiting: []
+    error: null
   }
 }
 
@@ -218,10 +217,6 @@ exports.append_kvt = function (state, hmac_key, kvt) {
       queue: []
     }
   }
-  else {
-    //waiting for initial state to be loaded
-    state.waiting.push(msg)
-  }
 
   state.queue.push(kvt)
   state.validated += 1
@@ -275,5 +270,3 @@ exports.appendNew = function (state, hmac_key, keys, content, timestamp) {
   state = exports.append(state, hmac_key, msg)
   return state
 }
-
-
