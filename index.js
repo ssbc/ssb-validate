@@ -73,6 +73,12 @@ var isSupportedHash = exports.isSupportedHash = function (msg) {
   return msg.hash === 'sha256'
 }
 
+var isSigMatchesCurve = exports.isSigMatchesCurve = function (msg) {
+  var curve = /\.(\w+)/.exec(msg.author)
+  if(!(curve && curve[1])) return
+  return '.sig.'+curve[1] == msg.signature.substring(msg.signature.length - (curve[1].length+5))
+}
+
 var isInvalidShape = exports.isInvalidShape = function (msg) {
   if(
     !isObject(msg) ||
@@ -107,6 +113,8 @@ exports.checkInvalidCheap = function (state, msg) {
   //the message is just invalid
   if(!ref.isFeedId(msg.author))
     return new Error('invalid message: must have author')
+  if(!isSigMatchesCurve(msg))
+    return new Error('invalid message: signature type must match author type')
 
   //state is id, sequence, timestamp
   if(state) {
@@ -270,3 +278,8 @@ exports.appendNew = function (state, hmac_key, keys, content, timestamp) {
   state = exports.append(state, hmac_key, msg)
   return state
 }
+
+
+
+
+
