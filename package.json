@@ -8,6 +8,7 @@
     "url": "git://github.com/ssbc/ssb-validate.git"
   },
   "dependencies": {
+    "is-canonical-base64": "^1.1.1",
     "monotonic-timestamp": "0.0.9",
     "ssb-ref": "^2.6.2"
   },
