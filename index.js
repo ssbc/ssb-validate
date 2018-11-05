@@ -3,6 +3,9 @@ var ssbKeys = require('ssb-keys')
 var isHash = ref.isHash
 var isFeedId = ref.isFeedId
 var timestamp = require('monotonic-timestamp')
+var isCanonicalBase64 = require('is-canonical-base64')
+var isEncryptedRx = isCanonicalBase64('','\.box.*')
+var isSignatureRx = isCanonicalBase64('','\.sig.\w+')
 
 function isValidOrder (msg, signed) {
   var i = 0
@@ -54,7 +57,8 @@ function isObject (o) {
 function isEncrypted (str) {
   //NOTE: does not match end of string,
   //so future box version are accepted.
-  return isString(str) && /^[0-9A-Za-z\/+]+={0,2}\.box/.test(str)
+  //XXX check that base64 is canonical!
+  return isString(str) && isEncryptedRx.test(str) ///^[0-9A-Za-z\/+]+={0,2}\.box/.test(str)
 }
 
 var isInvalidContent = exports.isInvalidContent = function (content) {
@@ -74,6 +78,7 @@ var isSupportedHash = exports.isSupportedHash = function (msg) {
 }
 
 var isSigMatchesCurve = exports.isSigMatchesCurve = function (msg) {
+  if(!isSignatureRx.test(msg.signature)) return new Error('signature was not canonical base64')
   var curve = /\.(\w+)/.exec(msg.author)
   if(!(curve && curve[1])) return
   return '.sig.'+curve[1] == msg.signature.substring(msg.signature.length - (curve[1].length+5))
@@ -278,8 +283,6 @@ exports.appendNew = function (state, hmac_key, keys, content, timestamp) {
   state = exports.append(state, hmac_key, msg)
   return state
 }
-
-
 
 
 
