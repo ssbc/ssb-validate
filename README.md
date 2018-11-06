@@ -7,6 +7,34 @@ but this is implemented functionally, with serializable state.
 this means, that the states generated when the reference implementation runs
 can be extracted and used as test cases in other implementations.
 
+## example
+
+``` js
+var validate = require('ssb-validate')
+var hmac_key = null
+var state = validate.initial()
+
+var msgs = [...] //some source of messages
+
+msgs.forEach(function (msg) {
+  try {
+    state = validate.append(state, hmac_key, msg)
+  } catch (err) {
+    console.log(err)
+  }
+})
+
+writeToDatabase(state.queue, function (err) {
+  if(err) throw err
+
+  //these messages are fully accepted now, can remove them from state.
+  state.queue = []
+})
+
+//state should be saved in some way it can be reconstructed
+//so in the future it can be appended to starting from scratch.
+```
+
 ## architecture
 
 This module describes the validation logic for ssb messages, using a reduce style
@@ -56,6 +84,26 @@ Create a message that is valid given the current state (such that it may be pass
 
 Calculate the message id for a given message.
 
+## shortcuts for js mode api
+
+In investigating the possiblity of an entirely web based scuttlebutt,
+verifying all signatures in javascript had added a lot of overhead.
+(although now this is not such a problem because of crypto in fast-enough webassembly)
+
+The following methods queues some number of messages and then validates a the last signature.
+It is possible that a specially constructed messages with some invalid signatures, followed
+by messages with valid signatures could get accepted, but the writer doesn't have anyway
+to know _which_ messages will be accepted, and a 3rd party could not insert invalid messages
+into another feed, because the signature that is eventually checked wouldn't point to the right
+previous hash.
+
+However, you can probably consider these methods not necessary. And they could be removed.
+
+``` js
+
+
+```
+
 ### state = validate.queue(state, msg)
 
 Call checkInvalidCheap and if valid, append to the feed's incoming queue.
@@ -97,9 +145,4 @@ if the message is invalid.
 ## License
 
 MIT
-
-
-
-
-
 
