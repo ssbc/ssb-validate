@@ -99,9 +99,34 @@ previous hash.
 
 However, you can probably consider these methods not necessary. And they could be removed.
 
-``` js
 
+```
+var validate = require('ssb-validate')
+var hmac_key = null
+var state = validate.initial()
 
+var msgs = [...] //some source of messages
+
+//queue messages
+msgs.forEach(function (msg) {
+  state = validate.queue(state, msg)
+  if(state.error) console.error(state.error)
+})
+
+//validate messages
+
+for(var feed_id in state.feeds)
+  state = validate.validate(state, hmac_key, feed_id)
+
+writeToDatabase(state.queue, function (err) {
+  if(err) throw err
+
+  //these messages are fully accepted now, can remove them from state.
+  state.queue = []
+})
+
+//state should be saved in some way it can be reconstructed
+//so in the future it can be appended to starting from scratch.
 ```
 
 ### state = validate.queue(state, msg)
@@ -145,4 +170,9 @@ if the message is invalid.
 ## License
 
 MIT
+
+
+
+
+
 
