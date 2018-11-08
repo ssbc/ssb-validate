@@ -75,10 +75,10 @@ end of `state.queue` it may now be written to the database.
 which can be used to create a separate network in which messages cannot be copied
 to the main network. Messages compatible with the main network have `hmac_key = null`
 
-### msg = validate.create(state, keys, hmac_key, content, timestamp)
+### msg = validate.create(feed_state, keys, hmac_key, content, timestamp)
 
-Create a message that is valid given the current state (such that it may be passed to `append(state, hmac_key, msg)`
-`keys` is the signing key, as provided by `ssbKeys.generate()` or `ssbKeys.createOrLoadSync(filename)`
+Create a message that is valid given the current state of the feed (such that it may be passed to 
+`append(state, hmac_key, msg)`. `keys` is the signing key, as provided by `ssbKeys.generate()` or `ssbKeys.createOrLoadSync(filename)`
 
 ### msg_id = validate.id(msg)
 
