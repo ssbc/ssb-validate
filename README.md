@@ -152,7 +152,7 @@ The following methods are exposed for testing, but are unlikely to be used direc
 
 Wrapper around create and append. used in testing.
 
-### state = validate.append_kvt (state, hmac_key, kvt)
+### state = validate.appendKVT (state, hmac_key, kvt)
 
 Internal details of append - recently this was refactored to avoid calculating
 the message id twice.

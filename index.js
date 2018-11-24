@@ -202,7 +202,7 @@ function flatState (fstate) {
     return fstate
 }
 
-exports.append_kvt = function (state, hmac_key, kvt) {
+exports.appendKVT = function (state, hmac_key, kvt) {
   var err
   var msg_id = kvt.key
   var msg = kvt.value
@@ -237,7 +237,7 @@ exports.append_kvt = function (state, hmac_key, kvt) {
 }
 
 exports.append = function (state, hmac_key, msg) {
-  return exports.append_kvt(state, hmac_key, exports.toKeyValueTimestamp(msg))
+  return exports.appendKVT(state, hmac_key, exports.toKeyValueTimestamp(msg))
 }
 
 exports.validate = function (state, hmac_key, feed) {
@@ -246,7 +246,7 @@ exports.validate = function (state, hmac_key, feed) {
   }
   var kvt = state.feeds[feed].queue.pop()
   state.queued -= 1
-  return exports.append_kvt(state, hmac_key, kvt)
+  return exports.appendKVT(state, hmac_key, kvt)
 }
 
 //pass in your own timestamp, so it's completely deterministic
