@@ -92,7 +92,7 @@ verifying all signatures in javascript had added a lot of overhead.
 
 The following methods queues some number of messages and then validates a the last signature.
 It is possible that a specially constructed messages with some invalid signatures, followed
-by messages with valid signatures could get accepted, but the writer doesn't have anyway
+by messages with valid signatures could get accepted, but the writer doesn't have any way
 to know _which_ messages will be accepted, and a 3rd party could not insert invalid messages
 into another feed, because the signature that is eventually checked wouldn't point to the right
 previous hash.
