@@ -144,6 +144,12 @@ Check the signature of the last message in feed_id's incoming queue,
 and if it is valid, append all messages in that queue.
 As optimization/shortcut for javascript crypto.
 
+### state = validate.appendOOO(state, hmac_key, msg)
+
+This method works the same as append except that it does not check the
+previous link of the message. This allows one to validate an out of
+order message or a row of messages not starting from the beginning.
+
 ## internal api
 
 The following methods are exposed for testing, but are unlikely to be used directly.
