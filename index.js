@@ -240,6 +240,53 @@ exports.append = function (state, hmac_key, msg) {
   return exports.appendKVT(state, hmac_key, exports.toKeyValueTimestamp(msg))
 }
 
+exports.appendBulk = function(state, hmac_key, messages) {
+
+  var kvtMessages = messages.map(function (msg) {
+    if(err = exports.checkInvalid(_state, hmac_key, msg.message))
+    throw err
+
+    if (!msg.message.author === keys.id) {
+      throw new Error("Bulk append author must be equal to key author.")
+    }
+
+    return exports.toKeyValueTimestamp(msg.message, msg.id)
+  });
+
+  var msgAuthor = keys.id;
+  var lowestSequence = kvtMessages[0].value.sequence
+  var lastMessage = kvtMessages[kvtMessages.length - 1]
+  var highestSequence = lastMessage.value.sequence
+  var lastMessageId = lastMessage.value.key
+  var timestamp = kvtMessages[0].timestamp
+
+  // Dequeue anything on the per-feed queue to the main queue before making the new write
+  if (state.feeds[msgAuthor]) {
+    var a = state.feeds[msgAuthor]
+    a.id = lastMessageId
+    a.sequence = highestSequence
+    a.timestamp = timestamp
+    var q = state.feeds[msgAuthor].queue
+    state.validated += q.length
+    state.queued -= q.length
+    for (var i = 0; i < q.length; ++i)
+      state.queue.push(q[i])
+    q = []
+  } else if (lowestSequence === 1) {
+    state.feeds[msg.author] = {
+      id: lastMessageId,
+      sequence: highestSequence,
+      timestamp: timestamp,
+      queue: []
+    }
+  }
+
+  state.queue.push(kvtMessages)
+  state.validated += 1
+
+  return state
+}
+
 exports.validate = function (state, hmac_key, feed) {
   if(!state.feeds[feed] || !state.feeds[feed].queue.length) {
     return state
@@ -272,6 +319,46 @@ exports.create = function (state, keys, hmac_key, content, timestamp) {
   var err = isInvalidShape(msg)
   if(err) throw err
   return ssbKeys.signObj(keys, hmac_key, msg)
+}
+
+exports.createAll = function (state, keys, hmac_key, messages, timestamp) {
+  if(timestamp == null || isNaN(+timestamp)) throw new Error('timestamp must be provided for messages')
+  if(state && +timestamp <= state.timestamp) throw new Error('timestamp must be increasing')
+
+  var previous = state ? state.id : null
+  var nextSequenceNumber = state ? state.sequence + 1 : 1
+  var result = [];
+
+  messages.forEach(function (content) {
+    if(!isObject(content) && !isEncrypted(content)) {
+      throw new Error('invalid message content, must be object or encrypted string')
+    }
+
+    var msg = {
+      previous: previous,
+      sequence: nextSequenceNumber,
+      author: keys.id,
+      timestamp: +timestamp,
+      hash: 'sha256',
+      content: content
+    }
+
+    var err = isInvalidShape(msg)
+    if(err) throw err
+
+    var signedMsg = ssbKeys.signObj(keys, hmac_key, msg);
+
+    var msgId = exports.id(signedMsg)
+    nextSequenceNumber = nextSequenceNumber + 1
+    previous = msgId
+  
+    result.push({
+      message: signedMsg,
+      id: msgId
+    })
+  })
+
+  return result;
 }
 
 exports.id = function (msg) {
