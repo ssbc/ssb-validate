@@ -157,6 +157,30 @@ exports.checkInvalid = function (state, hmac_key, msg) {
   return false //not invalid
 }
 
+exports.checkInvalidBulk = function (state, hmac_key, messages) {
+
+  for (var i = 0; i < messages.length; i++) {
+    var message = messages[i].message
+
+    if(!ref.isFeedId(message.author))
+      return new Error('invalid message: must have author')
+    if(!isSigMatchesCurve(message))
+      return new Error('invalid message: signature type must match author type')
+
+    if(!isValidOrder(message, true))
+      return fatal(new Error('message must have keys in allowed order'))
+
+    var invalidShape = isInvalidShape(message)
+
+    if (invalidShape) return invalidShape
+
+    if(!ssbKeys.verifyObj({public: message.author.substring(1)}, hmac_key, message))
+      return fatal(new Error('invalid signature'))
+    
+  }
+
+}
+
 /*
 {
   //an array of messages which have been validated, but not written to the database yet.
@@ -242,18 +266,17 @@ exports.append = function (state, hmac_key, msg) {
 
 exports.appendBulk = function(state, hmac_key, messages) {
 
+  var err = exports.checkInvalidBulk(state, hmac_key, messages)
+
+  if (err) throw err;
+
   var kvtMessages = messages.map(function (msg) {
-    if(err = exports.checkInvalid(_state, hmac_key, msg.message))
-    throw err
-
-    if (!msg.message.author === keys.id) {
-      throw new Error("Bulk append author must be equal to key author.")
-    }
-
     return exports.toKeyValueTimestamp(msg.message, msg.id)
   });
 
-  var msgAuthor = keys.id;
+  // todo: validate all authors are ourself
+  var msgAuthor = kvtMessages[0].value.author;
+
   var lowestSequence = kvtMessages[0].value.sequence
   var lastMessage = kvtMessages[kvtMessages.length - 1]
   var highestSequence = lastMessage.value.sequence
@@ -273,7 +296,7 @@ exports.appendBulk = function(state, hmac_key, messages) {
       state.queue.push(q[i])
     q = []
   } else if (lowestSequence === 1) {
-    state.feeds[msg.author] = {
+    state.feeds[msgAuthor] = {
       id: lastMessageId,
       sequence: highestSequence,
       timestamp: timestamp,
