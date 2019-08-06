@@ -352,7 +352,7 @@ exports.createAll = function (state, keys, hmac_key, messages, timestamp) {
   var nextSequenceNumber = state ? state.sequence + 1 : 1
   var result = [];
 
-  messages.forEach(function (content) {
+  messages.forEach(function (content, idx) {
     if(!isObject(content) && !isEncrypted(content)) {
       throw new Error('invalid message content, must be object or encrypted string')
     }
@@ -361,7 +361,9 @@ exports.createAll = function (state, keys, hmac_key, messages, timestamp) {
       previous: previous,
       sequence: nextSequenceNumber,
       author: keys.id,
-      timestamp: +timestamp,
+      // The createFeedStream index relies on increasing timestamps.
+      // todo: start a discussion about this...
+      timestamp: +timestamp + (idx / 100),
       hash: 'sha256',
       content: content
     }
