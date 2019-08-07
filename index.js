@@ -279,9 +279,11 @@ exports.appendBulk = function(state, hmac_key, messages) {
 
   var lowestSequence = kvtMessages[0].value.sequence
   var lastMessage = kvtMessages[kvtMessages.length - 1]
+
   var highestSequence = lastMessage.value.sequence
   var lastMessageId = lastMessage.value.key
-  var timestamp = kvtMessages[0].timestamp
+
+  var timestamp = lastMessage.timestamp
 
   // Dequeue anything on the per-feed queue to the main queue before making the new write
   if (state.feeds[msgAuthor]) {
