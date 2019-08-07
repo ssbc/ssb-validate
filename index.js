@@ -265,7 +265,6 @@ exports.append = function (state, hmac_key, msg) {
 }
 
 exports.appendBulk = function(state, hmac_key, messages) {
-
   var err = exports.checkInvalidBulk(state, hmac_key, messages)
 
   if (err) throw err;
@@ -283,7 +282,7 @@ exports.appendBulk = function(state, hmac_key, messages) {
   var highestSequence = lastMessage.value.sequence
   var lastMessageId = lastMessage.value.key
 
-  var timestamp = lastMessage.timestamp
+  var timestamp = lastMessage.value.timestamp
 
   // Dequeue anything on the per-feed queue to the main queue before making the new write
   if (state.feeds[msgAuthor]) {
@@ -323,6 +322,7 @@ exports.validate = function (state, hmac_key, feed) {
 
 //pass in your own timestamp, so it's completely deterministic
 exports.create = function (state, keys, hmac_key, content, timestamp) {
+
   if(timestamp == null || isNaN(+timestamp)) throw new Error('timestamp must be provided')
 
   if(!isObject(content) && !isEncrypted(content))
