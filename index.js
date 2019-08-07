@@ -159,6 +159,8 @@ exports.checkInvalid = function (state, hmac_key, msg) {
 
 exports.checkInvalidBulk = function (state, hmac_key, messages) {
 
+  // todo: validate all authors are ourself
+
   for (var i = 0; i < messages.length; i++) {
     var message = messages[i].message
 
@@ -273,11 +275,11 @@ exports.appendBulk = function(state, hmac_key, messages) {
     return exports.toKeyValueTimestamp(msg.message, msg.id)
   });
 
-  // todo: validate all authors are ourself
-  var msgAuthor = kvtMessages[0].value.author;
-
-  var lowestSequence = kvtMessages[0].value.sequence
+  var firstMessage = kvtMessages[0];
   var lastMessage = kvtMessages[kvtMessages.length - 1]
+
+  var msgAuthor = firstMessage.value.author;
+  var lowestSequence = firstMessage.value.sequence
 
   var highestSequence = lastMessage.value.sequence
   var lastMessageId = lastMessage.value.key
@@ -348,7 +350,13 @@ exports.create = function (state, keys, hmac_key, content, timestamp) {
 
 exports.createAll = function (state, keys, hmac_key, messages) {
 
+  // The 'previous' for the first message in the bulk append will be the
+  // message currently at the head of the log or null if this is the first
+  // append
   var previous = state ? state.id : null
+
+  // The first sequence number is the head of the log's sequence number + 1, or 1 if this is the first
+  // append
   var nextSequenceNumber = state ? state.sequence + 1 : 1
   var result = [];
 
@@ -374,12 +382,18 @@ exports.createAll = function (state, keys, hmac_key, messages) {
     var err = isInvalidShape(msg)
     if(err) throw err
 
+    // We need to sign the message this stage to know what its ID is to use it as the 'previous'
+    // for the next message
     var signedMsg = ssbKeys.signObj(keys, hmac_key, msg);
 
     var msgId = exports.id(signedMsg)
     nextSequenceNumber = nextSequenceNumber + 1
+
+    // The next 'previous' for the next message in the bulk append will be this message
+    // once the message has been appended
     previous = msgId
   
+    // We return the ID with the signed message as well as the ID so we don't have to compute it again
     result.push({
       message: signedMsg,
       id: msgId
