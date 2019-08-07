@@ -344,15 +344,18 @@ exports.create = function (state, keys, hmac_key, content, timestamp) {
   return ssbKeys.signObj(keys, hmac_key, msg)
 }
 
-exports.createAll = function (state, keys, hmac_key, messages, timestamp) {
-  if(timestamp == null || isNaN(+timestamp)) throw new Error('timestamp must be provided for messages')
-  if(state && +timestamp <= state.timestamp) throw new Error('timestamp must be increasing')
+exports.createAll = function (state, keys, hmac_key, messages) {
 
   var previous = state ? state.id : null
   var nextSequenceNumber = state ? state.sequence + 1 : 1
   var result = [];
 
-  messages.forEach(function (content, idx) {
+  messages.forEach(function (message, idx) {
+    var content = message.content
+    var timestamp = message.timestamp
+
+    // todo: Validate timestamps are increasing
+
     if(!isObject(content) && !isEncrypted(content)) {
       throw new Error('invalid message content, must be object or encrypted string')
     }
@@ -361,9 +364,7 @@ exports.createAll = function (state, keys, hmac_key, messages, timestamp) {
       previous: previous,
       sequence: nextSequenceNumber,
       author: keys.id,
-      // The createFeedStream index relies on increasing timestamps.
-      // todo: start a discussion about this...
-      timestamp: +timestamp + (idx / 100),
+      timestamp: +timestamp,
       hash: 'sha256',
       content: content
     }
