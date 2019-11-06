@@ -8,6 +8,10 @@ function hash (seed) {
   return crypto.createHash('sha256').update(seed).digest()
 }
 
+function id (msg) {
+  return '%'+crypto.createHash('sha256').update(JSON.stringify(msg, null, 2), 'binary').digest('base64')+'.sha256'
+}
+
 var keys = ssbKeys.generate('ed25519', hash('validation-test-seed1'))
 var keys2 = ssbKeys.generate('ed25519', hash('validation-test-seed2'))
 
@@ -132,7 +136,7 @@ function test (hmac_key) {
       content: content,
     })
     if(!Buffer.isBuffer(content))
-      data.push({state: state, msg: msg, cap: hmac_key, valid: false})
+      data.push({state: state, msg: msg, cap: hmac_key, valid: false, id: id(msg)})
     t.throws(function () {
       console.log(state, v.create(state, keys, hmac_key, content, timestamp))
     })
@@ -152,7 +156,7 @@ function test (hmac_key) {
         feeds: {},
         validated: 0
       }
-    data.push({state: state, msg: msg, cap: hmac_key, valid: false})
+    data.push({state: state, msg: msg, cap: hmac_key, valid: false, id: id(msg)})
 
     t.throws(function () {
       console.log(v.append(state, hmac_key, msg))
@@ -168,7 +172,7 @@ function test (hmac_key) {
   function test_valid(t, state, keys, hmac_key, content, timestamp) {
     var msg
     msg = v.create(state, keys, hmac_key, content, timestamp)
-    data.push({state: state, msg: msg, cap: hmac_key, valid: true})
+    data.push({state: state, msg: msg, cap: hmac_key, valid: true, id: id(msg)})
     var _state = {queue: [], feeds: {}}
     _state.feeds[keys.id] = state
     v.append(_state, hmac_key, msg)
@@ -179,7 +183,7 @@ function test (hmac_key) {
 
   function test_valid_msg(t, state, keys, hmac_key, _msg) {
     var msg = ssbKeys.signObj(keys, hmac_key, _msg)
-    data.push({state: state, msg: msg, cap: hmac_key, valid: true})
+    data.push({state: state, msg: msg, cap: hmac_key, valid: true, id: id(msg)})
     var _state = {queue: [], feeds: {}}
     _state.feeds[keys.id] = state
     v.append(_state, hmac_key, msg)
@@ -283,7 +287,7 @@ function test (hmac_key) {
       feeds: {},
       validated: 0
     }
-    data.push({state: state, msg: msg, cap: hmac_key, valid: false})
+    data.push({state: state, msg: msg, cap: hmac_key, valid: false, id: id(msg)})
 
     t.throws(function () {
       console.log(v.append(state, hmac_key, msg))
@@ -371,10 +375,3 @@ tape('write data', function (t) {
   fs.writeFileSync(path.join(__dirname, 'data', 'test_messages.json'), JSON.stringify(data, null, 2))
   t.end()
 })
-
-
-
-
-
-
-
