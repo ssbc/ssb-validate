@@ -241,6 +241,7 @@ exports.append = function (state, hmac_key, msg) {
 }
 
 exports.validate = function (state, hmac_key, feed) {
+  if(!isFeedId(feed)) throw new Error('validate takes a feedId')
   if(!state.feeds[feed] || !state.feeds[feed].queue.length) {
     return state
   }
@@ -283,6 +284,3 @@ exports.appendNew = function (state, hmac_key, keys, content, timestamp) {
   state = exports.append(state, hmac_key, msg)
   return state
 }
-
-
-
