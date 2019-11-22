@@ -1,7 +1,7 @@
 {
   "name": "ssb-validate",
   "description": "simplified validation for secure-scuttlebutt",
-  "version": "4.0.4",
+  "version": "4.0.5",
   "homepage": "https://github.com/ssbc/ssb-validate",
   "repository": {
     "type": "git",
