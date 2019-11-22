@@ -104,7 +104,7 @@ var isInvalidShape = exports.isInvalidShape = function (msg) {
   //we will fix at some point...
   var asJson = encode(msg)
   if (asJson.length > 8192) // 8kb
-    return new Error('encoded message must not be larger than 8192 bytes')
+    return new Error('Encoded message must not be larger than 8192 bytes. Current size is '+asJson.length)
 
   return isInvalidContent(msg.content)
 }
