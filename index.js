@@ -18,7 +18,7 @@ function isValidOrder (msg, signed) {
     keys[5] !== 'content' ||
     (signed && keys[6] !== 'signature')
   ) return false
-  //author and signature may be swapped.
+  //author and sequence may be swapped.
   if(!(
     (keys[1] === 'sequence' && keys[2] === 'author') ||
     (keys[1] === 'author' && keys[2] === 'sequence')
