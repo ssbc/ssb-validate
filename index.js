@@ -240,6 +240,43 @@ exports.append = function (state, hmac_key, msg) {
   return exports.appendKVT(state, hmac_key, exports.toKeyValueTimestamp(msg))
 }
 
+exports.checkInvalidOOO = function(msg, hmac_key) {
+  if(!ref.isFeedId(msg.author))
+    return new Error('invalid message: must have author')
+  if(!isSigMatchesCurve(msg))
+    return new Error('invalid message: signature type must match author type')
+  if('number' !== typeof msg.timestamp)
+    return fatal(new Error('message must have timestamp, on feed:'+msg.author))
+  if(!isValidOrder(msg, true))
+    return fatal(new Error('message must have keys in allowed order'))
+  if (isInvalidShape(msg))
+    return fatal(new Error('message has invalid shape'))
+  if(!ssbKeys.verifyObj({public: msg.author.substring(1)}, hmac_key, msg))
+    return fatal(new Error('invalid signature'))
+
+  return false // ok
+}
+
+exports.appendOOO = function(state, hmac_key, msg) {
+  if (state.error = exports.checkInvalidOOO(msg, hmac_key))
+    return state
+
+  var kvt = exports.toKeyValueTimestamp(msg)
+
+  if (!state.feeds[msg.author]) {
+    state.feeds[msg.author] = {
+      id: kvt.key,
+      sequence: msg.sequence,
+      timestamp: msg.timestamp,
+      queue: []
+    }
+  }
+
+  state.queue.push(kvt)
+  state.validated += 1
+  return state
+}
+
 exports.validate = function (state, hmac_key, feed) {
   if(!isFeedId(feed)) throw new Error('validate takes a feedId')
   if(!state.feeds[feed] || !state.feeds[feed].queue.length) {
