@@ -17,13 +17,23 @@ data.forEach(function (e,i) {
       var state = {feeds: {}, queue: []}
       state.feeds[e.msg.author] = e.state
       t.throws(function () {
-        try {
           state = v.append(state, e.cap, e.msg)
           console.log(e)
-        } catch(err) {
-          throw err
-        }
       })
       t.end()
     })
+})
+
+
+var invalid = require('./data/invalid_messages.json')
+invalid.forEach((message, messageIndex) => {
+  tape(`test invalid message (${messageIndex})`, (t) => {
+    t.plan(1)
+    console.log(message)
+    var state = {feeds: {}, queue: []}
+    t.throws(function () {
+      v.append(state, null, message)
+    })
+    t.end()
+  })
 })

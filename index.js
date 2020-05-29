@@ -103,7 +103,7 @@ var isInvalidShape = exports.isInvalidShape = function (msg) {
   //approach 32k. This is a weird legacy thing, obviously, that
   //we will fix at some point...
   var asJson = encode(msg)
-  if (asJson.length > 8192) // 8kb
+  if (Buffer.from(asJson, 'latin1').byteLength > 8192) // 8kb
     return new Error('Encoded message must not be larger than 8192 bytes. Current size is '+asJson.length)
 
   return isInvalidContent(msg.content)
