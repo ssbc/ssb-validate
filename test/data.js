@@ -2,28 +2,40 @@
 var tape = require('tape')
 var v = require('../')
 
-var data = require('./data/test_messages.json')
-data.forEach(function (e,i) {
-  if(e.valid)
-    tape('test valid message:'+i, function (t) {
-      var state = {feeds: {}, queue: []}
-      state.feeds[e.msg.author] = e.state
-      t.equal(v.id(e.msg), e.id)
-      v.append(state, e.cap, e.msg)
+var data = require('ssb-validation-dataset')
+
+const isObject = (subject) => typeof subject === 'object' && subject != null && Array.isArray(subject) === false
+
+data.forEach(function (e, i) {
+  var state = { feeds: {}, queue: [] }
+  if (isObject(e.message)) {
+    if (isObject(e.state)) {
+      e.state.queue = []
+    }
+    state.feeds[e.message.author] = e.state
+  }
+  if (e.valid) {
+    tape(`Message ${i} is valid`, function (t) {
+      try {
+        t.equal(v.id(e.message), e.id)
+        v.append(state, e.hmacKey, e.message)
+      } catch (err) {
+        console.log(e)
+        t.fail(err)
+      }
       t.end()
     })
-  else
-    tape('test valid message:'+i, function (t) {
-      var state = {feeds: {}, queue: []}
-      state.feeds[e.msg.author] = e.state
+  } else {
+    tape(`Message ${i} is invalid: ${e.error}`, function (t) {
+      var state = { feeds: {}, queue: [] }
+      if (isObject(e.message)) {
+        state.feeds[e.message.author] = e.state
+      }
       t.throws(function () {
-        try {
-          state = v.append(state, e.cap, e.msg)
-          console.log(e)
-        } catch(err) {
-          throw err
-        }
+        state = v.append(state, e.hmacKey, e.message)
+        console.log(e)
       })
       t.end()
     })
+  }
 })
