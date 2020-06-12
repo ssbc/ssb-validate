@@ -370,8 +370,3 @@ function test (hmac_key) {
 test()
 test(hash('hmac_key').toString('base64'))
 test(hash('hmac_key2').toString('base64'))
-
-tape('write data', function (t) {
-  fs.writeFileSync(path.join(__dirname, 'data', 'test_messages.json'), JSON.stringify(data, null, 2))
-  t.end()
-})

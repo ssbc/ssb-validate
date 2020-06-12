@@ -116,6 +116,7 @@ var isInvalidShape = exports.isInvalidShape = function (msg) {
 }
 
 const isInvalidHmacKey = (hmacKey) => {
+  if (hmacKey === undefined) return false
   if (hmacKey === null) return false
   const bytes = Buffer.from(hmacKey, 'base64')
   if (bytes.length !== 32) return true
