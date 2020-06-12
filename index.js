@@ -81,7 +81,13 @@ var isSigMatchesCurve = exports.isSigMatchesCurve = function (msg) {
   if(!isSignatureRx.test(msg.signature)) return
   var curve = /\.(\w+)/.exec(msg.author)
   if(!(curve && curve[1])) return
-  return '.sig.'+curve[1] == msg.signature.substring(msg.signature.length - (curve[1].length+5))
+
+  const signatureBase64Length = msg.signature.length - (curve[1].length + 5)
+
+  if (signatureBase64Length !== 88) return
+  if ('.sig.'+curve[1] !== msg.signature.substring(signatureBase64Length)) return
+
+  return true
 }
 
 var isInvalidShape = exports.isInvalidShape = function (msg) {
