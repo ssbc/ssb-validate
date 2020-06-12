@@ -109,6 +109,13 @@ var isInvalidShape = exports.isInvalidShape = function (msg) {
   return isInvalidContent(msg.content)
 }
 
+const isInvalidHmacKey = (hmacKey) => {
+  if (hmacKey === null) return false
+  const bytes = Buffer.from(hmacKey, 'base64')
+  if (bytes.length !== 32) return true
+  return false
+}
+
 function fatal(err) {
   err.fatal = true
   return err
@@ -152,6 +159,10 @@ exports.checkInvalidCheap = function (state, msg) {
 exports.checkInvalid = function (state, hmac_key, msg) {
   var err = exports.checkInvalidCheap(state, msg)
   if(err) return err
+
+  if (isInvalidHmacKey(hmac_key)) {
+    return fatal(new Error('invalid HMAC key'))
+  }
   if(!ssbKeys.verifyObj({public: msg.author.substring(1)}, hmac_key, msg))
     return fatal(new Error('invalid signature'))
   return false //not invalid
@@ -251,6 +262,8 @@ exports.checkInvalidOOO = function(msg, hmac_key) {
     return fatal(new Error('message must have keys in allowed order'))
   if (isInvalidShape(msg))
     return fatal(new Error('message has invalid shape'))
+  if (isInvalidHmacKey(hmac_key))
+    return fatal(new Error('invalid HMAC key'))
   if(!ssbKeys.verifyObj({public: msg.author.substring(1)}, hmac_key, msg))
     return fatal(new Error('invalid signature'))
 
