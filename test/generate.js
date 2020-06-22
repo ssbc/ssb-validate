@@ -5,6 +5,7 @@ var seed = require('crypto').createHash('sha256').update('validation-test-seed')
 var seed2 = require('crypto').createHash('sha256').update('validation-test-seed2').digest()
 var keys = ssbKeys.generate('ed25519', seed)
 var keys2 = ssbKeys.generate('ed25519', seed2)
+const crypto = require('crypto')
 
 var v = require('../')
 
@@ -15,6 +16,7 @@ function test (hmac_key) {
 
     var msg = v.create(null, keys, hmac_key, {type: 'test'}, +new Date('2017-04-11 8:08 UTC'))
     t.notOk(v.checkInvalidCheap(null, msg), 'cheap checks are valid')
+    console.log(hmac_key)
     t.notOk(v.checkInvalid(null, hmac_key, msg), 'signature is valid')
 
     //append sets the state for this author,
@@ -95,6 +97,6 @@ function test (hmac_key) {
 }
 
 test()
-var hmac_key = new Buffer(32).fill('X')
+var hmac_key = crypto.randomBytes(32).toString('base64')
 test(hmac_key)
 
