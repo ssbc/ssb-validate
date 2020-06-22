@@ -119,6 +119,7 @@ const isInvalidHmacKey = (hmacKey) => {
   if (hmacKey === undefined) return false
   if (hmacKey === null) return false
   const bytes = Buffer.from(hmacKey, 'base64')
+  if (bytes.toString('base64') !== hmacKey) return true
   if (bytes.length !== 32) return true
   return false
 }
