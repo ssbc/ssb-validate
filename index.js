@@ -1,6 +1,5 @@
 var ref = require('ssb-ref')
 var ssbKeys = require('ssb-keys')
-var isHash = ref.isHash
 var isFeedId = ref.isFeedId
 var timestamp = require('monotonic-timestamp')
 var isCanonicalBase64 = require('is-canonical-base64')
@@ -8,7 +7,6 @@ var isEncryptedRx = isCanonicalBase64('','\\.box.*')
 var isSignatureRx = isCanonicalBase64('','\\.sig.\\w+')
 
 function isValidOrder (msg, signed) {
-  var i = 0
   var keys = Object.keys(msg)
   if(signed && keys.length !== 7) return false
   if(
@@ -142,8 +140,6 @@ exports.checkInvalidCheap = function (state, msg) {
     //or append another message after an error.
     if(msg.sequence != state.sequence + 1)
       return new Error('invalid message: expected sequence ' + (state.sequence + 1) + ' but got:'+ msg.sequence + 'in state:'+JSON.stringify(state)+', on feed:'+msg.author)
-    //if the timestamp doesn't increase, they should have noticed at their end.
-    if(isNaN(state.timestamp)) throw new Error('state must have timestamp property, on feed:'+msg.author)
     //if we have the correct sequence and wrong previous,
     //this must be a fork!
     if(msg.previous != state.id)
@@ -316,8 +312,6 @@ exports.create = function (state, keys, hmac_key, content, timestamp) {
     throw new Error('invalid message content, must be object or encrypted string')
 
   state = flatState(state)
-
-  if(state && +timestamp <= state.timestamp) throw new Error('timestamp must be increasing')
 
   var msg = {
     previous: state ? state.id : null,
