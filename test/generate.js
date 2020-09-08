@@ -31,7 +31,7 @@ function test (hmac_key) {
     t.deepEqual(fstate.queue, [])
     t.deepEqual(state.queue.map(q => q.value), [msg])
 
-    var msg_invalid = v.create(null, keys, hmac_key, {type: 'test'}, +new Date('2017-04-11 8:08 UTC'))
+    v.create(null, keys, hmac_key, {type: 'test'}, +new Date('2017-04-11 8:08 UTC'))
     t.ok(v.checkInvalidCheap(fstate, msg), 'cheap checks are invalid (on invalid message)')
     t.ok(v.checkInvalid(fstate, hmac_key, msg), 'signature is invalid (on invalid message)')
 
