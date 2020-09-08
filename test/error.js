@@ -1,8 +1,6 @@
 var tape = require('tape')
 var ssbKeys = require('ssb-keys')
 var crypto = require('crypto')
-var path = require('path')
-var fs = require('fs')
 
 function hash (seed) {
   return crypto.createHash('sha256').update(seed).digest()
@@ -98,14 +96,14 @@ function test (hmac_key) {
 
   tape('create with invalid date', function (t) {
     t.throws(function () {
-      var m = v.create(null, keys, hmac_key, {type: 'invalid'}, new Date('foo'))
+      v.create(null, keys, hmac_key, {type: 'invalid'}, new Date('foo'))
     })
     t.end()
   })
 
   tape('invalid because of empty content', function (t) {
     t.throws(function () {
-      var m = v.create(null, keys, hmac_key, null, Date.now())
+      v.create(null, keys, hmac_key, null, Date.now())
     })
     t.end()
   })
@@ -188,9 +186,6 @@ function test (hmac_key) {
     _state.feeds[keys.id] = state
     v.append(_state, hmac_key, msg)
   }
-
-
-  var invalid = []
 
   tape('various invalid first messages', function (t) {
     var date = +new Date('2017-04-11 9:09 UTC')
@@ -301,8 +296,6 @@ function test (hmac_key) {
   })
 
   tape('valid messages', function (t) {
-    var msg
-
     //type must be 3 chars
     test_valid(t, null, keys, hmac_key, {type:'TTT' }, +new Date('2017-04-11 9:09 UTC'))
 

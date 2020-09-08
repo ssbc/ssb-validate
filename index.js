@@ -185,7 +185,9 @@ exports.checkInvalid = function (state, hmac_key, msg) {
 */
 
 exports.queue = function (state, msg) {
-  if(state.error = exports.checkInvalidCheap(flatState(state.feeds[msg.author]), msg))
+  state.error = exports.checkInvalidCheap(flatState(state.feeds[msg.author]), msg)
+
+  if(state.error)
     return state
   state.feeds[msg.author] = state.feeds[msg.author] || {
     id: null, sequence: null, timestamp: null, queue: []
@@ -222,8 +224,9 @@ exports.appendKVT = function (state, hmac_key, kvt) {
   var msg_id = kvt.key
   var msg = kvt.value
   var _state = flatState(state.feeds[msg.author])
+  err = exports.checkInvalid(_state, hmac_key, msg)
 
-  if(err = exports.checkInvalid(_state, hmac_key, msg))
+  if(err)
     throw err
   else if(state.feeds[msg.author]) {
     var a = state.feeds[msg.author]
@@ -275,7 +278,9 @@ exports.checkInvalidOOO = function(msg, hmac_key) {
 }
 
 exports.appendOOO = function(state, hmac_key, msg) {
-  if (state.error = exports.checkInvalidOOO(msg, hmac_key))
+
+  state.error = exports.checkInvalidOOO(msg, hmac_key)
+  if (state.error)
     return state
 
   var kvt = exports.toKeyValueTimestamp(msg)

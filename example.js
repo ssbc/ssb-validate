@@ -7,7 +7,7 @@ var state = {
   error: null
 }
 
-var c = 0, e = 0, start = Date.now(), l = 0
+var c = 0, e = 0, start = Date.now()
 require('ssb-client')(function (err, sbot) {
   if(err) throw err
   pull(
