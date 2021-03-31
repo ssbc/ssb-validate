@@ -10,7 +10,7 @@
   "dependencies": {
     "is-canonical-base64": "^1.1.1",
     "monotonic-timestamp": "0.0.9",
-    "ssb-keys": "^7.0.7",
+    "ssb-keys": "^8.1.0",
     "ssb-ref": "^2.6.2"
   },
   "devDependencies": {
