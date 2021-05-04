@@ -101,13 +101,15 @@ var isInvalidShape = exports.isInvalidShape = function (msg) {
 
   //allow encrypted messages, where content is a base64 string.
 
-  //NOTE: since this checks the length of javascript string,
-  //it's not actually the byte length! it's the number of utf8 chars
-  //for latin1 it's gonna be 8k, but if you use all utf8 you can
-  //approach 32k. This is a weird legacy thing, obviously, that
-  //we will fix at some point...
+  //NOTE: `.length` returns the number of utf-16 code units
+  //and NOT the byte length! For a latin1 string, the utf-16
+  //length will be equal to the byte length (each character is one byte).
+  //However, utf-8 strings may have a greater byte length
+  //than the utf-16 length. This means that a message can be
+  //larger than 8 KB and still pass this validation check!
+  //This is a weird legacy thing, obviously, that we will fix at some point...
   var asJson = encode(msg)
-  if (asJson.length > 8192) // 8kb
+  if (asJson.length > 8192) // utf-16 code units, NOT bytes!
     return new Error('Encoded message must not be larger than 8192 bytes. Current size is '+asJson.length)
 
   return isInvalidContent(msg.content)
